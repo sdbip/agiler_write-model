@@ -1,0 +1,29 @@
+extends:
+  - eslint:recommended
+  - plugin:@typescript-eslint/recommended
+parser: '@typescript-eslint/parser'
+root: true
+ignorePatterns:
+  - dist/
+parserOptions:
+  ecmaVersion: latest
+  sourceType: module
+env:
+  es6: true
+  node: true
+rules:
+  "@typescript-eslint/no-explicit-any": off
+  array-bracket-spacing: [error, always]
+  comma-dangle: [error, always-multiline]
+  comma-spacing: error
+  eol-last: [error, always]
+  eqeqeq: error
+  no-empty: off
+  no-var: error
+  object-curly-spacing: [error, always]
+  quotes:
+    - error
+    - single
+    - { avoidEscape: true }
+  semi: [error, never]
+  strict: error

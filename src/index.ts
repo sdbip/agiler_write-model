@@ -1,18 +1,12 @@
-#!/usr/bin/env node
-import express, { json, urlencoded, Router } from 'express';
-import { createServer } from 'http';
+import { setupServer } from './server.js'
 
-const app = express();
+const setup = setupServer()
+setup.get('/', async () => {
+  return { message: 'alive', test: process.env.TEST }
+})
 
-app.use(json());
-app.use(urlencoded({ extended: false }));
+const server = setup.finalize()
+const port = parseInt(process.env.PORT ?? '80') ?? 80
+server.listenAtPort(port)
 
-var router = Router();
-router.get('/', (req: unknown, res: any) => {
-  res.json({message: 'alive', test: process.env.TEST});
-});
-app.use('/', router);
-
-const port = process.env.PORT ?? 80
-const server = createServer(app);
-server.listen(port);
+process.stdout.write(`\x1B[35mListening on port \x1B[30m${port ?? '80'}\x1B[0m\n\n`)
