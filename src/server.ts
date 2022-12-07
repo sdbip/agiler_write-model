@@ -95,7 +95,7 @@ export class Server {
 
   listenAtPort(port: number) {
     if (!port) throw new Error('called without port number')
-    
+
     this.server = createServer(this.app)
     this.server.listen(port)
   }
@@ -105,7 +105,7 @@ export class Server {
       if (!this.server) return reject('no server started')
       this.server.close((error) => {
         if (error) return reject(error)
-  
+
         resolve()
       })
     })
