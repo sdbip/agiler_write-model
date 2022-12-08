@@ -10,9 +10,6 @@
   - add child (become Epic)
 
 # Tasks
-* Add ES support
-  - Publish all events from an entity
-  - Optimistic concurrency
-  - Check the path of schema.sql. Will it fail for dist/?
 - Add domain entity
 - Add POST /item endpoint
+- Check the path of schema.sql. Will it fail for dist/?
