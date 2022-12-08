@@ -80,4 +80,40 @@ describe(EventPublisher.name, () => {
       assert.equal(rs.rows[1].position, 1)
     })
   })
+
+  describe('publishChanges(entity)', () => {
+
+    it('creates entity if it does not exist', async () => {
+      const entity = {
+        id: new CanonicalEntityId('entity', 'type'),
+        unpublishedEvents: [],
+      }
+      await publisher.publishChanges(entity, 'test.system')
+
+      const rs = await db.query('SELECT * FROM "entities"')
+      assert.lengthOf(rs.rows, 1)
+      assert.deepEqual(rs.rows[0], {
+        id: 'entity',
+        type: 'type',
+        version: 0,
+      })
+    })
+
+    it('does not create entity twice', async () => {
+      const entity = {
+        id: new CanonicalEntityId('entity', 'type'),
+        unpublishedEvents: [],
+      }
+      await publisher.publishChanges(entity, 'test.system')
+      await publisher.publishChanges(entity, 'test.system')
+
+      const rs = await db.query('SELECT * FROM "entities"')
+      assert.lengthOf(rs.rows, 1)
+      assert.deepEqual(rs.rows[0], {
+        id: 'entity',
+        type: 'type',
+        version: 0,
+      })
+    })
+  })
 })

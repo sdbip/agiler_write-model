@@ -4,6 +4,11 @@ import { DATABASE_CONNECTION_STRING } from '../config.js'
 import { CanonicalEntityId } from './canonical-entity-id.js'
 import { UnpublishedEvent } from './unpublished-event.js'
 
+interface Entity {
+  id: CanonicalEntityId
+  unpublishedEvents: UnpublishedEvent[]
+}
+
 export class EventPublisher {
 
   async publish(event: UnpublishedEvent, entity: CanonicalEntityId, actor: string): Promise<void> {
@@ -30,7 +35,31 @@ export class EventPublisher {
         [ entity.id, entity.type, event.name, JSON.stringify(event.details), actor, nextVersion, nextPosition ])
 
       await db.query('COMMIT')
-    } catch(error) {
+    } catch (error) {
+      await db.query('ROLLBACK')
+      throw error
+    } finally {
+      await db.end()
+    }
+  }
+
+  async publishChanges(entity: Entity, actor: string) {
+    const db = new pg.Client(DATABASE_CONNECTION_STRING)
+    await db.connect()
+
+    const schema = await fs.readFile('./src/es/schema.sql')
+    await db.query(schema.toString('utf-8'))
+
+    await db.query('BEGIN TRANSACTION')
+
+    try {
+      const result = await db.query('SELECT "version" FROM "entities" WHERE id = $1', [ entity.id.id ])
+      if (result.rowCount === 0)
+        await db.query('INSERT INTO "entities" (id, type, version) VALUES ($1, $2, $3)',
+          [ entity.id.id, entity.id.type, 0 ])
+
+      await db.query('COMMIT')
+    } catch (error) {
       await db.query('ROLLBACK')
       throw error
     } finally {
