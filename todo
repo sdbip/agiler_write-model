@@ -1,0 +1,16 @@
+# Stories
+* Tasks
+  * add task
+  - complete
+  - promote to Story
+- Story
+  - add subtask
+- Feature
+  - add
+  - add child (become Epic)
+
+# Tasks
+* Add ES support
+  - Auto-create db schema
+- Add domain entity
+- Add POST /item endpoint
