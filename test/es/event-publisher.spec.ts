@@ -2,6 +2,7 @@ import { assert } from 'chai'
 import pg from 'pg'
 import { DATABASE_CONNECTION_STRING } from '../../src/config.js'
 import { CanonicalEntityId } from '../../src/es/canonical-entity-id.js'
+import { EntityVersion } from '../../src/es/entity-version.js'
 import { EventPublisher } from '../../src/es/event-publisher.js'
 import { UnpublishedEvent } from '../../src/es/unpublished-event.js'
 
@@ -86,6 +87,7 @@ describe(EventPublisher.name, () => {
     it('creates entity if it does not exist', async () => {
       const entity = {
         id: new CanonicalEntityId('entity', 'type'),
+        version: EntityVersion.new,
         unpublishedEvents: [],
       }
       await publisher.publishChanges(entity, 'test.system')
@@ -100,12 +102,16 @@ describe(EventPublisher.name, () => {
     })
 
     it('does not create entity twice', async () => {
-      const entity = {
+      await publisher.publishChanges({
         id: new CanonicalEntityId('entity', 'type'),
+        version: EntityVersion.new,
         unpublishedEvents: [],
-      }
-      await publisher.publishChanges(entity, 'test.system')
-      await publisher.publishChanges(entity, 'test.system')
+      }, 'test.system')
+      await publisher.publishChanges({
+        id: new CanonicalEntityId('entity', 'type'),
+        version: EntityVersion.of(0),
+        unpublishedEvents: [],
+      }, 'test.system')
 
       const rs = await db.query('SELECT * FROM "entities"')
       assert.lengthOf(rs.rows, 1)
@@ -114,6 +120,71 @@ describe(EventPublisher.name, () => {
         type: 'type',
         version: 0,
       })
+    })
+
+    it('publishes events', async () => {
+      const entity = {
+        id: new CanonicalEntityId('entity', 'type'),
+        version: EntityVersion.new,
+        unpublishedEvents: [
+          new UnpublishedEvent('event1', { value: 1 }),
+          new UnpublishedEvent('event2', {}),
+        ],
+      }
+      await publisher.publishChanges(entity, 'test-system')
+
+      const rs = await db.query('SELECT * FROM "events"')
+      assert.lengthOf(rs.rows, 2)
+      assert.deepEqual({ ...rs.rows[0], timestamp: undefined }, {
+        name: 'event1',
+        details: '{"value":1}',
+
+        entity_id: 'entity',
+        entity_type: 'type',
+
+        version: 0,
+        position: '0',
+
+        actor: 'test-system',
+        timestamp: undefined,
+      })
+      assert.deepEqual({ ...rs.rows[1], timestamp: undefined }, {
+        name: 'event2',
+        details: '{}',
+
+        entity_id: 'entity',
+        entity_type: 'type',
+
+        version: 1,
+        position: '0',
+
+        actor: 'test-system',
+        timestamp: undefined,
+      })
+    })
+
+    it('does not publish if entity has already changed', async () => {
+
+      const entity = {
+        id: new CanonicalEntityId('entity', 'type'),
+        unpublishedEvents: [],
+        version: EntityVersion.new,
+      }
+
+      const event = new UnpublishedEvent('event', { value: 1 })
+      await publisher.publish(event, entity.id, 'test-system')
+
+      let caught: unknown
+      try {
+        await publisher.publishChanges(entity, 'test.system')
+      } catch (error) {
+        caught = error
+      }
+
+      assert.exists(caught, 'publishChanges should have thrown error')
+
+      const rs = await db.query('SELECT * FROM "events"')
+      assert.lengthOf(rs.rows, 1)
     })
   })
 })

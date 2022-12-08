@@ -3,9 +3,11 @@ import { promises as fs } from 'fs'
 import { DATABASE_CONNECTION_STRING } from '../config.js'
 import { CanonicalEntityId } from './canonical-entity-id.js'
 import { UnpublishedEvent } from './unpublished-event.js'
+import { EntityVersion } from './entity-version.js'
 
 interface Entity {
   id: CanonicalEntityId
+  version: EntityVersion
   unpublishedEvents: UnpublishedEvent[]
 }
 
@@ -57,6 +59,20 @@ export class EventPublisher {
       if (result.rowCount === 0)
         await db.query('INSERT INTO "entities" (id, type, version) VALUES ($1, $2, $3)',
           [ entity.id.id, entity.id.type, 0 ])
+
+      const currentVersion = result.rowCount === 0 ? EntityVersion.new : EntityVersion.of(result.rows[0].version)
+      if (!entity.version.equals(currentVersion))
+        throw new Error(`Concurrent update of entity [${entity.id}]`)
+
+      const positionResult = await db.query('SELECT MAX("position") AS position FROM "events"')
+      const nextPosition: number = (positionResult.rows[0].position ?? -1) + 1
+
+      let version = currentVersion.next()
+      for (const event of entity.unpublishedEvents) {
+        await db.query('INSERT INTO "events" (entity_id, entity_type, name, details, actor, version, position) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+          [ entity.id.id, entity.id.type, event.name, JSON.stringify(event.details), actor, version.value, nextPosition ])
+        version = version.next()
+      }
 
       await db.query('COMMIT')
     } catch (error) {
