@@ -16,70 +16,80 @@ export class EventPublisher {
   async publish(event: UnpublishedEvent, entity: CanonicalEntityId, actor: string): Promise<void> {
     const db = new pg.Client(DATABASE_CONNECTION_STRING)
     await db.connect()
+    await addSchema(db)
 
-    const schema = await fs.readFile('./src/es/schema.sql')
-    await db.query(schema.toString('utf-8'))
+    await transaction(db, async db => {
+      const currentVersion = await getVersion(entity, db)
+      const lastPosition = await getLastPosition(db)
 
-    await db.query('BEGIN TRANSACTION')
+      if (currentVersion.equals(EntityVersion.new))
+        await insertEntity(entity, db)
 
-    try {
-      const result = await db.query('SELECT "version" FROM "entities" WHERE id = $1', [ entity.id ])
-      if (result.rowCount === 0)
-        await db.query('INSERT INTO "entities" (id, type, version) VALUES ($1, $2, $3)',
-          [ entity.id, entity.type, 0 ])
-
-      const nextVersion: number = result.rowCount === 0 ? 0 : result.rows[0].version + 1
-
-      const positionResult = await db.query('SELECT MAX("position") AS position FROM "events"')
-      const nextPosition: number = (positionResult.rows[0].position ?? -1) + 1
-
-      await db.query('INSERT INTO "events" (entity_id, entity_type, name, details, actor, version, position) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [ entity.id, entity.type, event.name, JSON.stringify(event.details), actor, nextVersion, nextPosition ])
-
-      await db.query('COMMIT')
-    } catch (error) {
-      await db.query('ROLLBACK')
-      throw error
-    } finally {
-      await db.end()
-    }
+      await insertEvent(entity, event, actor, currentVersion.next(), lastPosition + 1, db)
+    })
   }
 
   async publishChanges(entity: Entity, actor: string) {
     const db = new pg.Client(DATABASE_CONNECTION_STRING)
     await db.connect()
+    await addSchema(db)
 
-    const schema = await fs.readFile('./src/es/schema.sql')
-    await db.query(schema.toString('utf-8'))
+    await transaction(db, async db => {
+      const currentVersion = await getVersion(entity.id, db)
+      const lastPosition = await getLastPosition(db)
 
-    await db.query('BEGIN TRANSACTION')
-
-    try {
-      const result = await db.query('SELECT "version" FROM "entities" WHERE id = $1', [ entity.id.id ])
-      if (result.rowCount === 0)
-        await db.query('INSERT INTO "entities" (id, type, version) VALUES ($1, $2, $3)',
-          [ entity.id.id, entity.id.type, 0 ])
-
-      const currentVersion = result.rowCount === 0 ? EntityVersion.new : EntityVersion.of(result.rows[0].version)
       if (!entity.version.equals(currentVersion))
         throw new Error(`Concurrent update of entity [${entity.id}]`)
 
-      const positionResult = await db.query('SELECT MAX("position") AS position FROM "events"')
-      const nextPosition: number = (positionResult.rows[0].position ?? -1) + 1
+      if (currentVersion.equals(EntityVersion.new))
+        await insertEntity(entity.id, db)
 
       let version = currentVersion.next()
       for (const event of entity.unpublishedEvents) {
-        await db.query('INSERT INTO "events" (entity_id, entity_type, name, details, actor, version, position) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-          [ entity.id.id, entity.id.type, event.name, JSON.stringify(event.details), actor, version.value, nextPosition ])
+        await insertEvent(entity.id, event, actor, version, lastPosition + 1, db)
         version = version.next()
       }
-
-      await db.query('COMMIT')
-    } catch (error) {
-      await db.query('ROLLBACK')
-      throw error
-    } finally {
-      await db.end()
-    }
+    })
   }
+}
+
+async function insertEvent(entity: CanonicalEntityId, event: UnpublishedEvent, actor: string, version: EntityVersion, position: number, db: pg.Client) {
+  await db.query('INSERT INTO "events" (entity_id, entity_type, name, details, actor, version, position) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+    [ entity.id, entity.type, event.name, JSON.stringify(event.details), actor, version.value, position ])
+}
+
+async function getLastPosition(db: pg.Client) {
+  const positionResult = await db.query('SELECT MAX("position") AS position FROM "events"')
+  return positionResult.rows[0].position as number ?? -1
+}
+
+async function getVersion(entity: CanonicalEntityId, db: pg.Client) {
+  const result = await db.query('SELECT "version" FROM "entities" WHERE id = $1', [ entity.id ])
+  return result.rowCount === 0
+    ? EntityVersion.new
+    : EntityVersion.of(result.rows[0].version)
+}
+
+async function insertEntity(entity: CanonicalEntityId, db: pg.Client) {
+  await db.query('INSERT INTO "entities" (id, type, version) VALUES ($1, $2, $3)',
+    [ entity.id, entity.type, 0 ])
+}
+
+async function transaction(db: pg.Client, action: (db: pg.Client) => Promise<void>) {
+  await db.query('BEGIN TRANSACTION')
+  try {
+    await action(db)
+
+    await db.query('COMMIT')
+  } catch (error) {
+    await db.query('ROLLBACK')
+    throw error
+  } finally {
+    await db.end()
+  }
+}
+
+async function addSchema(db: pg.Client) {
+  const schema = await fs.readFile('./src/es/schema.sql')
+  await db.query(schema.toString('utf-8'))
 }
