@@ -10,26 +10,23 @@ export class EntityRepository {
     const db = new pg.Client(DATABASE_CONNECTION_STRING)
     await db.connect()
     try {
-      const entityData = await getEntityData(db, entity)
-      if (entityData === undefined) return undefined
-      if (entityData.type !== entity.type) throw new Error(`Incorrect type '${entity.type}'. Actual type: ${entityData.type}`)
+      const version = await getVersion(entity, db)
+      if (version === undefined) return undefined
 
-      const events = await getPublishedEvents(entity, db)
-      return new EntityHistory(entity, EntityVersion.of(entityData.version), events)
+      const events = await getPublishedEvents(entity.id, db)
+      return new EntityHistory(entity, EntityVersion.of(version), events)
     } finally {
       await db.end()
     }
   }
 }
 
-async function getEntityData(db: pg.Client, entity: CanonicalEntityId) {
-  const rs = await db.query('SELECT * FROM "entities" WHERE id = $1', [ entity.id ])
-  return rs.rows[0]
+async function getVersion(entity: CanonicalEntityId, db: pg.Client) {
+  const rs = await db.query('SELECT version FROM "entities" WHERE id = $1 AND type = $2', [ entity.id, entity.type ])
+  return rs.rows[0]?.version
 }
 
-async function getPublishedEvents(entity: CanonicalEntityId, db: pg.Client) {
-  const rs = await db.query(
-    'SELECT * FROM "events" WHERE entity_id = $1 ORDER BY version',
-    [ entity.id ])
+async function getPublishedEvents(id: string, db: pg.Client) {
+  const rs = await db.query('SELECT * FROM "events" WHERE entity_id = $1 ORDER BY version', [ id ])
   return rs.rows.map(r => new PublishedEvent(r.name, r.details))
 }

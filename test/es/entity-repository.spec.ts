@@ -5,7 +5,7 @@ import { DATABASE_CONNECTION_STRING } from '../../src/config.js'
 import { CanonicalEntityId } from '../../src/es/canonical-entity-id.js'
 import { EntityRepository } from '../../src/es/entity-repository.js'
 import { EntityVersion } from '../../src/es/entity-version.js'
-import { EventPublisher } from '../../src/es/event-publisher.js'
+import { Entity, EventPublisher } from '../../src/es/event-publisher.js'
 import { PublishedEvent } from '../../src/es/published-event.js'
 import { UnpublishedEvent } from '../../src/es/unpublished-event.js'
 
@@ -31,14 +31,15 @@ describe(EntityRepository.name, () => {
 
   it('finds stored events', async () => {
 
-    await publisher.publish(
-      new UnpublishedEvent('event1', { test: 'value' }),
-      new CanonicalEntityId('id', 'type'),
-      'test-setup')
-    await publisher.publish(
-      new UnpublishedEvent('event2', { test: 'value' }),
-      new CanonicalEntityId('id', 'type'),
-      'test-setup')
+    const entity: Entity = {
+      id: new CanonicalEntityId('id', 'type'),
+      version: EntityVersion.new,
+      unpublishedEvents: [
+        new UnpublishedEvent('event1', { test: 'value' }),
+        new UnpublishedEvent('event2', { test: 'value' }),
+      ],
+    }
+    await publisher.publishChanges(entity, 'test-setup')
 
     const history = await entityRepository.getHistoryFor(new CanonicalEntityId('id', 'type'))
     assert.deepEqual(history?.events[0], new PublishedEvent('event1', '{"test":"value"}'))
@@ -60,19 +61,12 @@ describe(EntityRepository.name, () => {
     assert.notExists(await entityRepository.getHistoryFor(new CanonicalEntityId('id', 'type')))
   })
 
-  it('throws if the entity is of a different type', async () => {
+  it('returns undefined if the entity is of a different type', async () => {
     await publisher.publish(
       new UnpublishedEvent('event', { test: 'value' }),
       new CanonicalEntityId('id', 'other_type'),
       'test-setup')
 
-      let caught
-    try {
-      await entityRepository.getHistoryFor(new CanonicalEntityId('id', 'type'))
-    } catch (error)  {
-      caught = error
-    }
-
-    assert.exists(caught, 'Should throw for incorrect type')
+    assert.notExists(await entityRepository.getHistoryFor(new CanonicalEntityId('id', 'type')))
   })
 })

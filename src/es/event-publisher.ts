@@ -5,7 +5,7 @@ import { CanonicalEntityId } from './canonical-entity-id.js'
 import { UnpublishedEvent } from './unpublished-event.js'
 import { EntityVersion } from './entity-version.js'
 
-interface Entity {
+export interface Entity {
   id: CanonicalEntityId
   version: EntityVersion
   unpublishedEvents: UnpublishedEvent[]
