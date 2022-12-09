@@ -10,6 +10,5 @@
   - add child (become Epic)
 
 # Tasks
-- Add domain entity
 - Add POST /item endpoint
 - Check the path of schema.sql. Will it fail for dist/?
