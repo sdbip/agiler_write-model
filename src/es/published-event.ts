@@ -1,3 +1,3 @@
 export class PublishedEvent {
-  constructor(readonly name: string, readonly details: string) { }
+  constructor(readonly name: string, readonly details: Record<string, unknown>) { }
 }

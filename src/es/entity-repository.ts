@@ -28,5 +28,5 @@ async function getVersion(entity: CanonicalEntityId, db: pg.Client) {
 
 async function getPublishedEvents(id: string, db: pg.Client) {
   const rs = await db.query('SELECT * FROM "events" WHERE entity_id = $1 ORDER BY version', [ id ])
-  return rs.rows.map(r => new PublishedEvent(r.name, r.details))
+  return rs.rows.map(r => new PublishedEvent(r.name, JSON.parse(r.details)))
 }

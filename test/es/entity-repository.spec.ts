@@ -42,8 +42,8 @@ describe(EntityRepository.name, () => {
     await publisher.publishChanges(entity, 'test-setup')
 
     const history = await entityRepository.getHistoryFor(new CanonicalEntityId('id', 'type'))
-    assert.deepEqual(history?.events[0], new PublishedEvent('event1', '{"test":"value"}'))
-    assert.deepEqual(history?.events[1], new PublishedEvent('event2', '{"test":"value"}'))
+    assert.deepEqual(history?.events[0], new PublishedEvent('event1', { test: 'value' }))
+    assert.deepEqual(history?.events[1], new PublishedEvent('event2', { test: 'value' }))
   })
 
   it('includes entity information', async () => {
