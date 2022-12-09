@@ -14,7 +14,7 @@ export class EntityRepository {
       if (version === undefined) return undefined
 
       const events = await getPublishedEvents(entity.id, db)
-      return new EntityHistory(entity, EntityVersion.of(version), events)
+      return new EntityHistory(EntityVersion.of(version), events)
     } finally {
       await db.end()
     }

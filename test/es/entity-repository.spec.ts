@@ -54,7 +54,6 @@ describe(EntityRepository.name, () => {
       'test-setup')
     const history = await entityRepository.getHistoryFor(new CanonicalEntityId('id', 'type'))
     assert.deepEqual(history?.version, EntityVersion.of(0))
-    assert.deepEqual(history?.id, new CanonicalEntityId('id', 'type'))
   })
 
   it('returns undefined if the entity does not exist', async () => {
