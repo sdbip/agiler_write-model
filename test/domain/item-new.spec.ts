@@ -20,7 +20,7 @@ describe('Item.new', () => {
   it('has a uuid id', () => {
     const item = Item.new('Get it done')
 
-    assert.match(item.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+    assert.match(item.id.id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
   })
 
   it('is created as a Task', () => {

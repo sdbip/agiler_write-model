@@ -17,11 +17,8 @@ type AddEvent =
 abstract class Entity {
   readonly unpublishedEvents: UnpublishedEvent[] = []
 
-  get id() { return this.entityId.id }
-  get type() { return this.entityId.type }
-
-  constructor(readonly entityId: CanonicalEntityId, readonly version: EntityVersion) {
-    failFast.unlessInstanceOf(CanonicalEntityId)(entityId, 'entityId')
+  constructor(readonly id: CanonicalEntityId, readonly version: EntityVersion) {
+    failFast.unlessInstanceOf(CanonicalEntityId)(id, 'id')
     failFast.unlessInstanceOf(EntityVersion)(version, 'version')
   }
 }
@@ -43,18 +40,18 @@ export class Item extends Entity {
     if (this.itemType === ItemType.Story)
       failFast.unless(item.itemType === ItemType.Task, `Only ${ItemType.Task} items may be added`)
 
-    this.addNewEvent(ItemEvent.ChildrenAdded, { children: [ item.id ] })
+    this.addNewEvent(ItemEvent.ChildrenAdded, { children: [ item.id.id ] })
     if (this.itemType === ItemType.Feature)
       this.addNewEvent(ItemEvent.TypeChanged, { type: ItemType.Epic })
 
     item.removeEventMatching(e => e.name === ItemEvent.ParentChanged)
-    item.addNewEvent(ItemEvent.ParentChanged, { parent: this.id })
+    item.addNewEvent(ItemEvent.ParentChanged, { parent: this.id.id })
   }
 
   remove(task: Item) {
-    if (task.parent !== this.id) return
+    if (task.parent !== this.id.id) return
     task.parent = undefined
-    this.addNewEvent(ItemEvent.ChildrenRemoved, { children: [ task.id ] })
+    this.addNewEvent(ItemEvent.ChildrenRemoved, { children: [ task.id.id ] })
     task.addNewEvent(ItemEvent.ParentChanged, { parent: null })
   }
 

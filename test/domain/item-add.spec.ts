@@ -10,7 +10,7 @@ describe('Item.add', () => {
     const task = reconstitute.task('task_id')
     story.add(task)
     const event = story.unpublishedEvents.find(e => e.name === ItemEvent.ChildrenAdded)
-    assert.deepEqual(event?.details.children, [ task.id ])
+    assert.deepEqual(event?.details.children, [ task.id.id ])
   })
 
   it('sets the parent of a Task', () => {
@@ -18,7 +18,7 @@ describe('Item.add', () => {
     const task = reconstitute.task('task_id')
     story.add(task)
     const event = task.unpublishedEvents.find(e => e.name === ItemEvent.ParentChanged)
-    assert.equal(event?.details.parent, story.id)
+    assert.equal(event?.details.parent, story.id.id)
   })
 
   it('adds an MMF to a Feature', () => {
@@ -26,7 +26,7 @@ describe('Item.add', () => {
     const mmf = reconstitute.feature('mmf_id')
     epic.add(mmf)
     const event = epic.unpublishedEvents.find(e => e.name === ItemEvent.ChildrenAdded)
-    assert.deepEqual(event?.details.children, [ mmf.id ])
+    assert.deepEqual(event?.details.children, [ mmf.id.id ])
   })
 
   it('sets the parent of an MMF', () => {
@@ -34,7 +34,7 @@ describe('Item.add', () => {
     const mmf = reconstitute.feature('mmf_id')
     epic.add(mmf)
     const event = mmf.unpublishedEvents.find(e => e.name === ItemEvent.ParentChanged)
-    assert.equal(event?.details.parent, epic.id)
+    assert.equal(event?.details.parent, epic.id.id)
   })
 
   it('converts the parent Feature to an Epic', () => {
