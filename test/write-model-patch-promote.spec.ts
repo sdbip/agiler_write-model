@@ -3,7 +3,6 @@ import { request } from 'http'
 import { PORT } from '../src/config.js'
 import { ItemEvent, ItemType } from '../src/domain/enums.js'
 import { Item } from '../src/domain/item.js'
-import { CanonicalEntityId } from '../src/es/canonical-entity-id.js'
 import { EntityHistory } from '../src/es/entity-history.js'
 import { EntityVersion } from '../src/es/entity-version.js'
 import { start, stop } from '../src/index.js'
@@ -30,11 +29,11 @@ describe('write model', () => {
     })
 
     it('publishes "TypeChanged" event when items are promoted [PATCH /item/:id/promote]', async () => {
-      repository.nextHistory = new EntityHistory(EntityVersion.of(0), [])
+      repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
       const response = await promote('id')
 
       assert.equal(response.statusCode, StatusCode.NoContent)
-      assert.deepEqual(repository.lastRequestedEntity, new CanonicalEntityId('id', Item.TYPE_CODE))
+      assert.deepEqual(repository.lastRequestedId, 'id')
       assert.lengthOf(publisher.lastPublishedEvents as never[], 1)
       assert.deepInclude(
         publisher.lastPublishedEvents[0],
@@ -49,6 +48,13 @@ describe('write model', () => {
     })
 
     it('returns 404 if not found [PATCH /item/:id/promote]', async () => {
+      const response = await promote('id')
+
+      assert.equal(response.statusCode, StatusCode.NotFound)
+    })
+
+    it('returns 404 if not an Item [PATCH /item/:id/promote]', async () => {
+      repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
       const response = await promote('id')
 
       assert.equal(response.statusCode, StatusCode.NotFound)

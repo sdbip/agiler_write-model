@@ -41,31 +41,22 @@ describe(EntityRepository.name, () => {
     }
     await publisher.publishChanges(entity, 'test-setup')
 
-    const history = await entityRepository.getHistoryFor(new CanonicalEntityId('id', 'type'))
+    const history = await entityRepository.getHistoryFor('id')
     assert.deepEqual(history?.events[0], new PublishedEvent('event1', { test: 'value' }))
     assert.deepEqual(history?.events[1], new PublishedEvent('event2', { test: 'value' }))
   })
 
   it('includes entity information', async () => {
-
     await publisher.publish(
       new UnpublishedEvent('event1', { test: 'value' }),
       new CanonicalEntityId('id', 'type'),
       'test-setup')
-    const history = await entityRepository.getHistoryFor(new CanonicalEntityId('id', 'type'))
+    const history = await entityRepository.getHistoryFor('id')
     assert.deepEqual(history?.version, EntityVersion.of(0))
+    assert.equal(history?.type, 'type')
   })
 
   it('returns undefined if the entity does not exist', async () => {
-    assert.notExists(await entityRepository.getHistoryFor(new CanonicalEntityId('id', 'type')))
-  })
-
-  it('returns undefined if the entity is of a different type', async () => {
-    await publisher.publish(
-      new UnpublishedEvent('event', { test: 'value' }),
-      new CanonicalEntityId('id', 'other_type'),
-      'test-setup')
-
-    assert.notExists(await entityRepository.getHistoryFor(new CanonicalEntityId('id', 'type')))
+    assert.notExists(await entityRepository.getHistoryFor('id'))
   })
 })

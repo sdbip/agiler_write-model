@@ -1,5 +1,4 @@
 import { EntityRepository } from '../src/EntityRepository.js'
-import { CanonicalEntityId } from '../src/es/canonical-entity-id.js'
 import { EntityHistory } from '../src/es/entity-history.js'
 import { Entity, EventPublisher } from '../src/es/event-publisher.js'
 import { PublishedEvent } from '../src/es/published-event.js'
@@ -7,16 +6,16 @@ import { PublishedEvent } from '../src/es/published-event.js'
 
 export class MockEntityRepository implements EntityRepository {
   nextHistory?: EntityHistory
-  lastRequestedEntity?: CanonicalEntityId
+  lastRequestedId?: string
 
-  async getHistoryFor(entity: CanonicalEntityId): Promise<EntityHistory | undefined> {
-    this.lastRequestedEntity = entity
+  async getHistoryFor(id: string): Promise<EntityHistory | undefined> {
+    this.lastRequestedId = id
     return this.nextHistory
   }
 
   reset() {
     this.nextHistory = undefined
-    this.lastRequestedEntity = undefined
+    this.lastRequestedId = undefined
   }
 }
 

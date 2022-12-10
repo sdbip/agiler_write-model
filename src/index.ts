@@ -4,14 +4,15 @@ import { EventPublisher as PGEventPublisher } from './es/event-publisher.js'
 import { EntityRepository as PGEntityRepository } from './es/entity-repository.js'
 import { NOT_FOUND, NO_CONTENT, Request, setupServer, StatusCode } from './server.js'
 import { Item } from './domain/item.js'
-import { CanonicalEntityId } from './es/canonical-entity-id.js'
 
 let repository: EntityRepository = new PGEntityRepository()
 let publisher: EventPublisher = new PGEventPublisher()
 
 const setup = setupServer()
-setup.get('/', async () => {
-  return { message: 'alive', test: process.env.TEST }
+setup.get('/entity/:id', async (request) => {
+  const id = request.params.id as string
+  const history = await repository.getHistoryFor(id)
+  return history ?? NOT_FOUND
 })
 
 setup.post('/item', async (request) => {
@@ -28,8 +29,8 @@ setup.post('/item/:id/child', async (request) => {
   const id = request.params.id as string
   const body = await readBody(request)
 
-  const history = await repository.getHistoryFor(new CanonicalEntityId(id, Item.TYPE_CODE))
-  if (!history) return NOT_FOUND
+  const history = await repository.getHistoryFor(id)
+  if (!history || history.type !== Item.TYPE_CODE) return NOT_FOUND
 
   const parent = Item.reconstitute(id, history.version, history.events)
   const item = Item.new(body.title, body.type)
@@ -44,8 +45,8 @@ setup.post('/item/:id/child', async (request) => {
 
 setup.patch('/item/:id/complete', async (request) => {
   const id = request.params.id as string
-  const history = await repository.getHistoryFor(new CanonicalEntityId(id, Item.TYPE_CODE))
-  if (!history) return NOT_FOUND
+  const history = await repository.getHistoryFor(id)
+  if (!history || history.type !== Item.TYPE_CODE) return NOT_FOUND
 
   const item = Item.reconstitute(id, history.version, history.events)
   item.complete()
@@ -55,8 +56,8 @@ setup.patch('/item/:id/complete', async (request) => {
 
 setup.patch('/item/:id/promote', async (request) => {
   const id = request.params.id as string
-  const history = await repository.getHistoryFor(new CanonicalEntityId(id, Item.TYPE_CODE))
-  if (!history) return NOT_FOUND
+  const history = await repository.getHistoryFor(id)
+  if (!history || history.type !== Item.TYPE_CODE) return NOT_FOUND
 
   const item = Item.reconstitute(id, history.version, history.events)
   item.promote()

@@ -29,14 +29,14 @@ describe('write model', () => {
   describe('POST /item/:id/child', () => {
 
     it('publishes "ChildrenAdded" and "ParentChanged" events', async () => {
-      repository.nextHistory = new EntityHistory(EntityVersion.of(0), [
+      repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
         new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
       ])
 
       const response = await post('epic_id', { title: 'Produce some value', type: ItemType.Feature })
 
       assert.equal(response.statusCode, StatusCode.Created)
-      assert.equal(repository.lastRequestedEntity?.id, 'epic_id')
+      assert.equal(repository.lastRequestedId, 'epic_id')
 
       const createdEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.Created)
       const childrenAddedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ChildrenAdded)
@@ -69,19 +69,25 @@ describe('write model', () => {
 
       assert.equal(response.statusCode, StatusCode.NotFound)
     })
+
+    it('returns 404 if not an Item', async () => {
+      repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
+      const response = await post('story_id', { title: 'Produce some value' })
+      assert.equal(response.statusCode, StatusCode.NotFound)
+    })
   })
 
   describe('POST /item/:id/child (feature)', () => {
 
     it('publishes "ChildrenAdded" and "ParentChanged" events', async () => {
-      repository.nextHistory = new EntityHistory(EntityVersion.of(0), [
+      repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
         new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Story }),
       ])
 
       const response = await post('story_id', { title: 'Get Shit Done' })
 
       assert.equal(response.statusCode, StatusCode.Created)
-      assert.equal(repository.lastRequestedEntity?.id, 'story_id')
+      assert.equal(repository.lastRequestedId, 'story_id')
 
       const createdEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.Created)
       const childrenAddedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ChildrenAdded)
@@ -111,7 +117,12 @@ describe('write model', () => {
 
     it('returns 404 if story not found', async () => {
       const response = await post('epic_id', { title: 'Get Shit Done' })
+      assert.equal(response.statusCode, StatusCode.NotFound)
+    })
 
+    it('returns 404 if not an Item', async () => {
+      repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
+      const response = await post('epic_id', { title: 'Get Shit Done' })
       assert.equal(response.statusCode, StatusCode.NotFound)
     })
   })
