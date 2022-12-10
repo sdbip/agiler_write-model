@@ -2,8 +2,9 @@ import { EntityRepository } from './EntityRepository.js'
 import { EventPublisher } from './EventPublisher.js'
 import { EventPublisher as PGEventPublisher } from './es/event-publisher.js'
 import { EntityRepository as PGEntityRepository } from './es/entity-repository.js'
-import { Request, setupServer } from './server.js'
+import { NOT_FOUND, NO_CONTENT, Request, setupServer, StatusCode } from './server.js'
 import { Item } from './domain/item.js'
+import { CanonicalEntityId } from './es/canonical-entity-id.js'
 
 let repository: EntityRepository = new PGEntityRepository()
 let publisher: EventPublisher = new PGEventPublisher()
@@ -18,9 +19,20 @@ setup.post('/item', async (request) => {
   const item = Item.new(body.title)
   await publisher.publishChanges(item, 'write-model')
   return {
-    statusCode: 200,
+    statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),
   }
+})
+
+setup.patch('/item/:id/complete', async (request) => {
+  const id = request.params.id as string
+  const history = await repository.getHistoryFor(new CanonicalEntityId(id, Item.TYPE_CODE))
+  if (!history) return NOT_FOUND
+
+  const item = Item.reconstitute(id, history.version, history.events)
+  item.complete()
+  await publisher.publishChanges(item, 'system_actor')
+  return NO_CONTENT
 })
 
 async function readBody(request: Request): Promise<any> {

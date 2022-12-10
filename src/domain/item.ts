@@ -24,6 +24,8 @@ abstract class Entity {
 }
 
 export class Item extends Entity {
+  static readonly TYPE_CODE = 'Item'
+
   private itemType = ItemType.Task
   private parent?: string
 
@@ -84,7 +86,7 @@ export class Item extends Entity {
     return item
   }
 
-  private constructor(id: string, version: EntityVersion) { super(new CanonicalEntityId(id, 'Item'), version) }
+  private constructor(id: string, version: EntityVersion) { super(new CanonicalEntityId(id, Item.TYPE_CODE), version) }
 
   private removeEventMatching(predicate: (e: UnpublishedEvent) => boolean) {
     const existingEvent = this.unpublishedEvents.findIndex(predicate)

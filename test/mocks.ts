@@ -1,11 +1,11 @@
+import { EntityRepository } from '../src/EntityRepository.js'
 import { CanonicalEntityId } from '../src/es/canonical-entity-id.js'
 import { EntityHistory } from '../src/es/entity-history.js'
-import { EntityRepository } from '../src/es/entity-repository.js'
 import { Entity, EventPublisher } from '../src/es/event-publisher.js'
-import { UnpublishedEvent } from '../src/es/unpublished-event.js'
+import { PublishedEvent } from '../src/es/published-event.js'
 
 
-export class MockEventRepository implements EntityRepository {
+export class MockEntityRepository implements EntityRepository {
   nextHistory?: EntityHistory
   lastRequestedEntity?: CanonicalEntityId
 
@@ -16,15 +16,22 @@ export class MockEventRepository implements EntityRepository {
 }
 
 export class MockEventPublisher implements EventPublisher {
-  async publish(event: UnpublishedEvent, entity: CanonicalEntityId, actor: string) {
-    //
-  }
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
+  async publish() { }
 
   lastPublishedEntity?: Entity
   lastPublishedActor?: string
+  publishedEvents: any[] = []
 
   async publishChanges(entity: Entity, actor: string): Promise<void> {
     this.lastPublishedActor = actor
     this.lastPublishedEntity = { ...entity }
+    this.publishedEvents = entity.unpublishedEvents.map(e => ({
+      actor,
+      event: new PublishedEvent(
+        e.name,
+        e.details,
+      ),
+    }))
   }
 }
