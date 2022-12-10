@@ -7,22 +7,24 @@ import { EntityVersion } from '../src/es/entity-version.js'
 import { PublishedEvent } from '../src/es/published-event.js'
 import { start, stop } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
-import { MockEntityRepository, MockEventPublisher } from './mocks.js'
+import { MockEntityRepository, MockEventProjection, MockEventPublisher } from './mocks.js'
 import { readResponse } from './read-response.js'
 import { Response } from './response.js'
 
 describe('write model', () => {
 
   const publisher = new MockEventPublisher()
+  const projection = new MockEventProjection()
   const repository = new MockEntityRepository()
 
   before(() => {
-    start({ repository, publisher })
+    start({ repository, publisher, projection })
   })
   after(stop)
 
   beforeEach(() => {
     publisher.reset()
+    projection.reset()
     repository.reset()
   })
 
@@ -33,58 +35,7 @@ describe('write model', () => {
         new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
       ])
 
-      const response = await post('epic_id', { title: 'Produce some value', type: ItemType.Feature })
-
-      assert.equal(response.statusCode, StatusCode.Created)
-      assert.equal(repository.lastRequestedId, 'epic_id')
-
-      const createdEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.Created)
-      const childrenAddedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ChildrenAdded)
-      const parentChangedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ParentChanged)
-      assert.deepInclude(childrenAddedEvent, {
-        actor: 'system_actor',
-        event: {
-          name: ItemEvent.ChildrenAdded,
-          details: { children: [ JSON.parse(response.content).id ] },
-        },
-      })
-      assert.deepInclude(parentChangedEvent, {
-        actor: 'system_actor',
-        event: {
-          name: ItemEvent.ParentChanged,
-          details: { parent: 'epic_id' },
-        },
-      })
-      assert.deepInclude(createdEvent, {
-        actor: 'system_actor',
-        event: {
-          name: ItemEvent.Created,
-          details: { title: 'Produce some value', type: ItemType.Feature },
-        },
-      })
-    })
-
-    it('returns 404 if story not found', async () => {
-      const response = await post('story_id', { title: 'Produce some value' })
-
-      assert.equal(response.statusCode, StatusCode.NotFound)
-    })
-
-    it('returns 404 if not an Item', async () => {
-      repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
-      const response = await post('story_id', { title: 'Produce some value' })
-      assert.equal(response.statusCode, StatusCode.NotFound)
-    })
-  })
-
-  describe('POST /item/:id/child (feature)', () => {
-
-    it('publishes "ChildrenAdded" and "ParentChanged" events', async () => {
-      repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
-        new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Story }),
-      ])
-
-      const response = await post('story_id', { title: 'Get Shit Done' })
+      const response = await post('story_id', { title: 'Get shit done', type: ItemType.Feature })
 
       assert.equal(response.statusCode, StatusCode.Created)
       assert.equal(repository.lastRequestedId, 'story_id')
@@ -110,9 +61,80 @@ describe('write model', () => {
         actor: 'system_actor',
         event: {
           name: ItemEvent.Created,
-          details: { title: 'Get Shit Done', type: ItemType.Task },
+          details: { title: 'Get shit done', type: ItemType.Feature },
         },
       })
+    })
+
+    it('projects events', async () => {
+      repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
+        new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
+      ])
+
+      await post('story_id', { title: 'Get shit done', type: ItemType.Feature })
+
+      assert.lengthOf(projection.lastSyncedEvents, 4)
+    })
+
+    it('returns 404 if story not found', async () => {
+      const response = await post('story_id', { title: 'Produce some value' })
+
+      assert.equal(response.statusCode, StatusCode.NotFound)
+    })
+
+    it('returns 404 if not an Item', async () => {
+      repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
+      const response = await post('story_id', { title: 'Produce some value' })
+      assert.equal(response.statusCode, StatusCode.NotFound)
+    })
+  })
+
+  describe('POST /item/:id/child (feature)', () => {
+
+    it('publishes "ChildrenAdded" and "ParentChanged" events', async () => {
+      repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
+        new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
+      ])
+
+      const response = await post('epic_id', { title: 'Produce some value' })
+
+      assert.equal(response.statusCode, StatusCode.Created)
+      assert.equal(repository.lastRequestedId, 'epic_id')
+
+      const createdEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.Created)
+      const childrenAddedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ChildrenAdded)
+      const parentChangedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ParentChanged)
+      assert.deepInclude(childrenAddedEvent, {
+        actor: 'system_actor',
+        event: {
+          name: ItemEvent.ChildrenAdded,
+          details: { children: [ JSON.parse(response.content).id ] },
+        },
+      })
+      assert.deepInclude(parentChangedEvent, {
+        actor: 'system_actor',
+        event: {
+          name: ItemEvent.ParentChanged,
+          details: { parent: 'epic_id' },
+        },
+      })
+      assert.deepInclude(createdEvent, {
+        actor: 'system_actor',
+        event: {
+          name: ItemEvent.Created,
+          details: { title: 'Produce some value', type: ItemType.Task },
+        },
+      })
+    })
+
+    it('projects events', async () => {
+      repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
+        new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
+      ])
+
+      await post('story_id', { title: 'Produce some value', type: ItemType.Feature })
+
+      assert.lengthOf(projection.lastSyncedEvents, 4)
     })
 
     it('returns 404 if story not found', async () => {

@@ -20,7 +20,7 @@ setup.post('/item', async (request) => {
   const body = await readBody(request)
   const item = Item.new(body.title, body.type)
   await publisher.publishChanges(item, 'system_actor')
-  await projectUnpublishedEvents(item)
+  await projectUnpublishedEvents([ item ])
   return {
     statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),
@@ -39,6 +39,7 @@ setup.post('/item/:id/child', async (request) => {
   parent.add(item)
 
   await publisher.publishChanges([ parent, item ], 'system_actor')
+  await projectUnpublishedEvents([ item, parent ])
   return {
     statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),
@@ -53,6 +54,7 @@ setup.patch('/item/:id/complete', async (request) => {
   const item = Item.reconstitute(id, history.version, history.events)
   item.complete()
   await publisher.publishChanges(item, 'system_actor')
+  await projectUnpublishedEvents([ item ])
   return NO_CONTENT
 })
 
@@ -64,6 +66,7 @@ setup.patch('/item/:id/promote', async (request) => {
   const item = Item.reconstitute(id, history.version, history.events)
   item.promote()
   await publisher.publishChanges(item, 'system_actor')
+  await projectUnpublishedEvents([ item ])
   return NO_CONTENT
 })
 
@@ -82,12 +85,15 @@ async function readBody(request: Request): Promise<any> {
   })
 }
 
-async function projectUnpublishedEvents(entity: Entity) {
-  await projection.sync(entity.unpublishedEvents.map(e => ({
-    entity: entity.id,
-    name: e.name,
-    details: e.details,
-  })))
+async function projectUnpublishedEvents(entities: Entity[]) {
+  await projection.sync(
+    entities.map(entity => entity.unpublishedEvents
+      .map(e => ({
+        entity: entity.id,
+        name: e.name,
+        details: e.details,
+      })))
+      .flat())
 }
 
 const server = setup.finalize()
@@ -96,7 +102,7 @@ server.listenAtPort(port)
 
 process.stdout.write(`\x1B[35mListening on port \x1B[30m${port ?? '80'}\x1B[0m\n\n`)
 
-export function start({ projection: testProjection, repository: testRepository, publisher: testPublisher }:{repository?: EntityRepository, publisher?: EventPublisher, projection?: EventProjection}) {
+export function start({ projection: testProjection, repository: testRepository, publisher: testPublisher }: { repository?: EntityRepository, publisher?: EventPublisher, projection?: EventProjection }) {
   if (testRepository) repository = testRepository
   if (testPublisher) publisher = testPublisher
   if (testProjection) projection = testProjection

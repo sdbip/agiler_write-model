@@ -7,7 +7,7 @@ import { EntityHistory } from '../src/es/entity-history.js'
 import { EntityVersion } from '../src/es/entity-version.js'
 import { start, stop } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
-import { MockEventPublisher, MockEntityRepository } from './mocks.js'
+import { MockEventPublisher, MockEntityRepository, MockEventProjection } from './mocks.js'
 import { readResponse } from './read-response.js'
 import { Response } from './response.js'
 
@@ -17,14 +17,16 @@ describe('write model', () => {
 
     const repository = new MockEntityRepository()
     const publisher = new MockEventPublisher()
+    const projection = new MockEventProjection()
 
     before(() => {
-      start({ repository, publisher })
+      start({ repository, publisher, projection })
     })
     after(stop)
 
     beforeEach(() => {
       publisher.reset()
+      projection.reset()
       repository.reset()
     })
 
@@ -45,6 +47,20 @@ describe('write model', () => {
           },
         })
       assert.equal(publisher.lastPublishedEntities[0]?.id.type, Item.TYPE_CODE)
+    })
+
+    it('projects "Created" event', async () => {
+      repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+      await promote('id')
+
+      assert.lengthOf(projection.lastSyncedEvents, 1)
+      assert.deepInclude(
+        projection.lastSyncedEvents[0],
+        {
+          name: ItemEvent.TypeChanged,
+          details: { type: ItemType.Story },
+        })
+      assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
     })
 
     it('returns 404 if not found [PATCH /item/:id/promote]', async () => {
