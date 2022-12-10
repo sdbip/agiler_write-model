@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { EntityVersion } from '../../src/es/entity-version'
+import { EntityVersion } from '../../src/es/entity-version.js'
 
 describe(EntityVersion.name, () => {
 

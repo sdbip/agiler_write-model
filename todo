@@ -4,3 +4,8 @@
 # Tasks
 - Identify user as actor
 - Add inProgress
+- Integration tests between projection and read-model
+- Integration tests between projection and write-model
+- Rename parent -> parentId in ParentChanged?
+- Add abstraction over Chai
+  - assert.throws(async)

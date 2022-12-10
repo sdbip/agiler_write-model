@@ -1,9 +1,9 @@
 import pg from 'pg'
 import { promises as fs } from 'fs'
-import { DATABASE_CONNECTION_STRING } from '../config'
-import { CanonicalEntityId } from './canonical-entity-id'
-import { ItemEvent, Progress } from '../domain/enums'
-import { Item } from '../domain/item'
+import { DATABASE_CONNECTION_STRING } from '../config.js'
+import { CanonicalEntityId } from './canonical-entity-id.js'
+import { ItemEvent, Progress } from '../domain/enums.js'
+import { Item } from '../domain/item.js'
 
 export type Event = {
   entity: CanonicalEntityId,
