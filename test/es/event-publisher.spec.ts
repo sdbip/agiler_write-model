@@ -187,4 +187,90 @@ describe(EventPublisher.name, () => {
       assert.lengthOf(rs.rows, 1)
     })
   })
+
+  describe('publishChanges(Entity[])', () => {
+
+    it('creates entities if they do not exist', async () => {
+      const entity = {
+        id: new CanonicalEntityId('entity', 'type'),
+        version: EntityVersion.new,
+        unpublishedEvents: [],
+      }
+      await publisher.publishChanges([ entity ], 'test.system')
+
+      const rs = await db.query('SELECT * FROM "entities"')
+      assert.lengthOf(rs.rows, 1)
+      assert.deepEqual(rs.rows[0], {
+        id: 'entity',
+        type: 'type',
+        version: 0,
+      })
+    })
+
+    it('throws if same entity is included twice', async () => {
+      const entity = {
+        id: new CanonicalEntityId('entity', 'type'),
+        version: EntityVersion.new,
+        unpublishedEvents: [],
+      }
+
+      let thrown: any
+      try {
+        await publisher.publishChanges([ entity, { ...entity } ], 'test.system')
+      } catch (error) {
+        thrown = error
+      }
+      assert.exists(thrown)
+
+      const rs = await db.query('SELECT * FROM "entities"')
+      assert.lengthOf(rs.rows, 0)
+    })
+
+    it('publishes all events', async () => {
+      const entity1 = {
+        id: new CanonicalEntityId('entity1', 'type'),
+        version: EntityVersion.new,
+        unpublishedEvents: [
+          new UnpublishedEvent('event1', { value: 1 }),
+          new UnpublishedEvent('event2', {}),
+        ],
+      }
+      const entity2 = {
+        id: new CanonicalEntityId('entity2', 'type'),
+        version: EntityVersion.new,
+        unpublishedEvents: [
+          new UnpublishedEvent('event1', { value: 1 }),
+          new UnpublishedEvent('event2', {}),
+        ],
+      }
+      await publisher.publishChanges([ entity1, entity2 ], 'test-system')
+
+      const rs = await db.query('SELECT * FROM "events"')
+      assert.lengthOf(rs.rows, 4)
+    })
+
+    it('does not publish if entity has already changed', async () => {
+
+      const entity = {
+        id: new CanonicalEntityId('entity', 'type'),
+        unpublishedEvents: [],
+        version: EntityVersion.new,
+      }
+
+      const event = new UnpublishedEvent('event', { value: 1 })
+      await publisher.publish(event, entity.id, 'test-system')
+
+      let caught: unknown
+      try {
+        await publisher.publishChanges([ entity ], 'test.system')
+      } catch (error) {
+        caught = error
+      }
+
+      assert.exists(caught, 'publishChanges should have thrown error')
+
+      const rs = await db.query('SELECT * FROM "events"')
+      assert.lengthOf(rs.rows, 1)
+    })
+  })
 })

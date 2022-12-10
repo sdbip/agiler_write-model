@@ -9,4 +9,8 @@ export class CanonicalEntityId {
   equals(other: CanonicalEntityId): any {
     return other.id === this.id && other.type === this.type
   }
+
+  toString() {
+    return `[${this.type} ${this.id}]`
+  }
 }

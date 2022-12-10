@@ -24,27 +24,30 @@ export class EventPublisher {
     })
   }
 
-  async publishChanges(entity: Entity | Entity[], actor: string) {
-    if (entity instanceof Array) throw new Error('Not impolemented')
+  async publishChanges(entityOrEntities: Entity | Entity[], actor: string) {
+    const entities = entityOrEntities instanceof Array ? entityOrEntities : [ entityOrEntities ]
 
     const db = new pg.Client(DATABASE_CONNECTION_STRING)
     await db.connect()
     await addSchema(db)
 
     await transaction(db, async db => {
-      const currentVersion = await getVersion(entity.id, db)
       const lastPosition = await getLastPosition(db)
 
-      if (!entity.version.equals(currentVersion))
-        throw new Error(`Concurrent update of entity [${entity.id}]`)
+      for (const entity of entities) {
+        const currentVersion = await getVersion(entity.id, db)
 
-      if (currentVersion.equals(EntityVersion.new))
-        await insertEntity(entity.id, db)
+        if (!entity.version.equals(currentVersion))
+          throw new Error(`Concurrent update of entity ${entity.id}`)
 
-      let version = currentVersion.next()
-      for (const event of entity.unpublishedEvents) {
-        await insertEvent(entity.id, event, actor, version, lastPosition + 1, db)
-        version = version.next()
+        if (currentVersion.equals(EntityVersion.new))
+          await insertEntity(entity.id, db)
+
+        let version = currentVersion.next()
+        for (const event of entity.unpublishedEvents) {
+          await insertEvent(entity.id, event, actor, version, lastPosition + 1, db)
+          version = version.next()
+        }
       }
     })
   }
