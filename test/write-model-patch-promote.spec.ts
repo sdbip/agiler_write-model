@@ -30,7 +30,7 @@ describe('write model', () => {
       repository.reset()
     })
 
-    it('publishes "TypeChanged" event when items are promoted [PATCH /item/:id/promote]', async () => {
+    it('publishes "TypeChanged" event when items are promoted', async () => {
       repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
       const response = await promote('id')
 
@@ -63,13 +63,13 @@ describe('write model', () => {
       assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
     })
 
-    it('returns 404 if not found [PATCH /item/:id/promote]', async () => {
+    it('returns 404 if not found', async () => {
       const response = await promote('id')
 
       assert.equal(response.statusCode, StatusCode.NotFound)
     })
 
-    it('returns 404 if not an Item [PATCH /item/:id/promote]', async () => {
+    it('returns 404 if not an Item', async () => {
       repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
       const response = await promote('id')
 

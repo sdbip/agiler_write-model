@@ -30,7 +30,7 @@ describe('write model', () => {
       repository.reset()
     })
 
-    it('publishes "ProgressChanged" event when items are completed [PATCH /item/:id/complete]', async () => {
+    it('publishes "ProgressChanged" event when items are completed', async () => {
       repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
       const response = await complete('id')
 
@@ -65,13 +65,13 @@ describe('write model', () => {
       assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
     })
 
-    it('returns 404 if not found [PATCH /item/:id/complete]', async () => {
+    it('returns 404 if not found', async () => {
       const response = await complete('id')
 
       assert.equal(response.statusCode, StatusCode.NotFound)
     })
 
-    it('returns 404 if not an Item [PATCH /item/:id/complete]', async () => {
+    it('returns 404 if not an Item', async () => {
       repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
       const response = await complete('id')
 
