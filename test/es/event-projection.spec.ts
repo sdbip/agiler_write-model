@@ -27,23 +27,192 @@ describe(EventProjection.name, () => {
     assert.equal(result.rowCount, 0)
   })
 
-  it('adds row when it receives "Created" event', async () => {
+  it('ignores unhandled events', async () => {
     await projection.sync([
       {
-        name: ItemEvent.Created,
+        name: ItemEvent.ChildrenAdded,
         entity: new CanonicalEntityId('id', 'Item'),
-        details: { title: 'Title', type: ItemType.Task },
+        details: { parent: 'new_parent_id' },
       },
     ])
 
     const result = await db.query('SELECT * FROM "items"')
-    assert.equal(result.rowCount, 1)
-    assert.deepEqual(result.rows[0], {
+    assert.equal(result.rowCount, 0)
+  })
+
+  describe(`on "${ItemEvent.Created}"`, () => {
+
+    it('adds row in "items" table', async () => {
+      await projection.sync([
+        {
+          name: ItemEvent.Created,
+          entity: new CanonicalEntityId('id', 'Item'),
+          details: { title: 'Title', type: ItemType.Task },
+        },
+      ])
+
+      const result = await db.query('SELECT * FROM "items"')
+      assert.equal(result.rowCount, 1)
+      assert.deepEqual(result.rows[0], {
+        id: 'id',
+        parent_id: null,
+        progress: Progress.NotStarted,
+        title: 'Title',
+        type: ItemType.Task,
+      })
+    })
+
+    it('does not add row if not Item', async () => {
+      await projection.sync([
+        {
+          name: ItemEvent.Created,
+          entity: new CanonicalEntityId('id', 'NotItem'),
+          details: { title: 'Title', type: ItemType.Task },
+        },
+      ])
+
+      const result = await db.query('SELECT * FROM "items"')
+      assert.equal(result.rowCount, 0)
+    })
+  })
+
+  describe(`on "${ItemEvent.ParentChanged}"`, () => {
+
+    const originalItem = {
       id: 'id',
       parent_id: null,
       progress: Progress.NotStarted,
-      title: 'Title',
+      title: 'Get it done',
       type: ItemType.Task,
+    }
+
+    beforeEach(async () => {
+      await projection.sync([])
+      await db.query("INSERT INTO Items (id, type, progress, title) VALUES ('id', 'Task', 'notStarted', 'Get it done')")
+    })
+
+    it('sets the parent_id column', async () => {
+      await projection.sync([
+        {
+          name: ItemEvent.ParentChanged,
+          entity: new CanonicalEntityId('id', 'Item'),
+          details: { parent: 'new_parent_id' },
+        },
+      ])
+
+      const result = await db.query('SELECT * FROM "items"')
+      assert.equal(result.rowCount, 1)
+      assert.deepEqual(result.rows[0], {
+        ...originalItem,
+        parent_id: 'new_parent_id',
+      })
+    })
+
+    it('does not add row if not Item', async () => {
+      await projection.sync([
+        {
+          name: ItemEvent.ParentChanged,
+          entity: new CanonicalEntityId('id', 'NotItem'),
+          details: { parent: 'parent_id' },
+        },
+      ])
+
+      const result = await db.query('SELECT * FROM "items"')
+      assert.deepEqual(result.rows[0], originalItem)
+    })
+  })
+
+  describe(`on "${ItemEvent.ProgressChanged}"`, () => {
+
+    const originalItem = {
+      id: 'id',
+      parent_id: null,
+      progress: Progress.NotStarted,
+      title: 'Get it done',
+      type: ItemType.Task,
+    }
+
+    beforeEach(async () => {
+      await projection.sync([])
+      await db.query(
+        'INSERT INTO Items (id, type, progress, title) VALUES ($1, $2, $3, $4)',
+        [ originalItem.id, originalItem.type, originalItem.progress, originalItem.title ])
+    })
+
+    it('sets the parent_id column', async () => {
+      await projection.sync([
+        {
+          name: ItemEvent.ProgressChanged,
+          entity: new CanonicalEntityId('id', 'Item'),
+          details: { progress: Progress.Completed },
+        },
+      ])
+
+      const result = await db.query('SELECT * FROM "items"')
+      assert.equal(result.rowCount, 1)
+      assert.deepEqual(result.rows[0], {
+        ...originalItem,
+        progress: Progress.Completed,
+      })
+    })
+
+    it('does not update if not Item', async () => {
+      await projection.sync([
+        {
+          name: ItemEvent.ProgressChanged,
+          entity: new CanonicalEntityId('id', 'NotItem'),
+          details: { progress: Progress.Completed },
+        },
+      ])
+
+      const result = await db.query('SELECT * FROM "items"')
+      assert.deepEqual(result.rows[0], originalItem)
+    })
+  })
+
+  describe(`on "${ItemEvent.TypeChanged}"`, () => {
+
+    const originalItem = {
+      id: 'id',
+      parent_id: null,
+      progress: Progress.NotStarted,
+      title: 'Get it done',
+      type: ItemType.Task,
+    }
+
+    beforeEach(async () => {
+      await projection.sync([])
+      await db.query("INSERT INTO Items (id, type, progress, title) VALUES ('id', 'Task', 'notStarted', 'Get it done')")
+    })
+
+    it('sets the parent_id column', async () => {
+      await projection.sync([
+        {
+          name: ItemEvent.TypeChanged,
+          entity: new CanonicalEntityId('id', 'Item'),
+          details: { type: ItemType.Story },
+        },
+      ])
+
+      const result = await db.query('SELECT * FROM "items"')
+      assert.equal(result.rowCount, 1)
+      assert.deepEqual(result.rows[0], {
+        ...originalItem,
+        type: ItemType.Story,
+      })
+    })
+
+    it('does not update if not Item', async () => {
+      await projection.sync([
+        {
+          name: ItemEvent.TypeChanged,
+          entity: new CanonicalEntityId('id', 'NotItem'),
+          details: { type: ItemType.Story },
+        },
+      ])
+
+      const result = await db.query('SELECT * FROM "items"')
+      assert.deepEqual(result.rows[0], originalItem)
     })
   })
 })
