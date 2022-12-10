@@ -16,7 +16,7 @@ describe('write model', () => {
   const repository = new MockEntityRepository()
 
   before(() => {
-    start(repository, new MockEventPublisher())
+    start({ repository })
   })
   after(stop)
 

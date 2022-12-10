@@ -1,9 +1,21 @@
 import { Entity } from '../src/es/entity.js'
 import { EntityHistory } from '../src/es/entity-history.js'
-import { EventPublisher } from '../src/es/event-publisher.js'
 import { EntityRepository } from '../src/es/entity-repository.js'
+import { Event, EventProjection } from '../src/es/event-projection.js'
+import { EventPublisher } from '../src/es/event-publisher.js'
 import { PublishedEvent } from '../src/es/published-event.js'
 
+export class MockEventProjection implements EventProjection {
+  lastSyncedEvents: Event[] = []
+
+  async sync(events: Event[]) {
+    this.lastSyncedEvents = events
+  }
+
+  reset() {
+    this.lastSyncedEvents = []
+  }
+}
 
 export class MockEntityRepository implements EntityRepository {
   nextHistory?: EntityHistory

@@ -19,7 +19,7 @@ describe('write model', () => {
     const publisher = new MockEventPublisher()
 
     before(() => {
-      start(repository, publisher)
+      start({ repository, publisher })
     })
     after(stop)
 

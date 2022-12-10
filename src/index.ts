@@ -1,10 +1,13 @@
 import { EventPublisher } from './es/event-publisher.js'
 import { EntityRepository } from './es/entity-repository.js'
+import { EventProjection } from './es/event-projection.js'
 import { NOT_FOUND, NO_CONTENT, Request, setupServer, StatusCode } from './server.js'
 import { Item } from './domain/item.js'
+import { Entity } from './es/entity.js'
 
 let repository = new EntityRepository()
 let publisher = new EventPublisher()
+let projection = new EventProjection()
 
 const setup = setupServer()
 setup.get('/entity/:id', async (request) => {
@@ -17,6 +20,7 @@ setup.post('/item', async (request) => {
   const body = await readBody(request)
   const item = Item.new(body.title, body.type)
   await publisher.publishChanges(item, 'system_actor')
+  await projectUnpublishedEvents(item)
   return {
     statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),
@@ -78,15 +82,24 @@ async function readBody(request: Request): Promise<any> {
   })
 }
 
+async function projectUnpublishedEvents(entity: Entity) {
+  await projection.sync(entity.unpublishedEvents.map(e => ({
+    entity: entity.id,
+    name: e.name,
+    details: e.details,
+  })))
+}
+
 const server = setup.finalize()
 const port = parseInt(process.env.PORT ?? '80') ?? 80
 server.listenAtPort(port)
 
 process.stdout.write(`\x1B[35mListening on port \x1B[30m${port ?? '80'}\x1B[0m\n\n`)
 
-export function start(testRepository: EntityRepository, testPublisher: EventPublisher) {
-  repository = testRepository
-  publisher = testPublisher
+export function start({ projection: testProjection, repository: testRepository, publisher: testPublisher }:{repository?: EntityRepository, publisher?: EventPublisher, projection?: EventProjection}) {
+  if (testRepository) repository = testRepository
+  if (testPublisher) publisher = testPublisher
+  if (testProjection) projection = testProjection
   server.stopListening()
   server.listenAtPort(port)
 }

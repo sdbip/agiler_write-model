@@ -7,16 +7,17 @@ import { EntityVersion } from '../src/es/entity-version.js'
 import { PublishedEvent } from '../src/es/published-event.js'
 import { start, stop } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
-import { MockEntityRepository, MockEventPublisher } from './mocks.js'
+import { MockEventProjection, MockEventPublisher } from './mocks.js'
 import { readResponse } from './read-response.js'
 import { Response } from './response.js'
 
 describe('write model', () => {
 
   const publisher = new MockEventPublisher()
+  const projection = new MockEventProjection()
 
   before(() => {
-    start(new MockEntityRepository(), publisher)
+    start({ publisher, projection })
   })
   after(stop)
 
@@ -37,6 +38,19 @@ describe('write model', () => {
         actor: 'system_actor',
         event: new PublishedEvent(ItemEvent.Created, { title: 'Get shit done', type: ItemType.Task }),
       })
+    })
+
+    it('projects "Created" event', async () => {
+      await post({ title: 'Get shit done' })
+
+      assert.lengthOf(projection.lastSyncedEvents, 1)
+      assert.deepInclude(
+        projection.lastSyncedEvents[0],
+        {
+          name: ItemEvent.Created,
+          details: { title: 'Get shit done', type: ItemType.Task },
+        })
+      assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
     })
 
     it('returns the created id', async () => {
@@ -66,6 +80,19 @@ describe('write model', () => {
           details: { title: 'Produce some value', type: ItemType.Feature },
         },
       })
+    })
+
+    it('projects "Created" event', async () => {
+      await post({ title: 'Produce some value', type: ItemType.Feature })
+
+      assert.lengthOf(projection.lastSyncedEvents, 1)
+      assert.deepInclude(
+        projection.lastSyncedEvents[0],
+        {
+          name: ItemEvent.Created,
+          details: { title: 'Produce some value', type: ItemType.Feature },
+        })
+      assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
     })
   })
 })
