@@ -5,7 +5,7 @@ import { Event, EventProjection } from '../src/es/event-projection.js'
 import { EventPublisher } from '../src/es/event-publisher.js'
 import { PublishedEvent } from '../src/es/published-event.js'
 
-export class MockEventProjection implements EventProjection {
+export class MockEventProjection extends EventProjection {
   lastSyncedEvents: Event[] = []
 
   async sync(events: Event[]) {
