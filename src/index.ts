@@ -1,12 +1,10 @@
-import { EntityRepository } from './EntityRepository.js'
-import { EventPublisher } from './EventPublisher.js'
-import { EventPublisher as PGEventPublisher } from './es/event-publisher.js'
-import { EntityRepository as PGEntityRepository } from './es/entity-repository.js'
+import { EventPublisher } from './es/event-publisher.js'
+import { EntityRepository } from './es/entity-repository.js'
 import { NOT_FOUND, NO_CONTENT, Request, setupServer, StatusCode } from './server.js'
 import { Item } from './domain/item.js'
 
-let repository: EntityRepository = new PGEntityRepository()
-let publisher: EventPublisher = new PGEventPublisher()
+let repository = new EntityRepository()
+let publisher = new EventPublisher()
 
 const setup = setupServer()
 setup.get('/entity/:id', async (request) => {

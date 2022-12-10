@@ -4,12 +4,7 @@ import { DATABASE_CONNECTION_STRING } from '../config.js'
 import { CanonicalEntityId } from './canonical-entity-id.js'
 import { UnpublishedEvent } from './unpublished-event.js'
 import { EntityVersion } from './entity-version.js'
-
-export interface Entity {
-  id: CanonicalEntityId
-  version: EntityVersion
-  unpublishedEvents: UnpublishedEvent[]
-}
+import { Entity } from './entity.js'
 
 export class EventPublisher {
 
@@ -29,7 +24,9 @@ export class EventPublisher {
     })
   }
 
-  async publishChanges(entity: Entity, actor: string) {
+  async publishChanges(entity: Entity | Entity[], actor: string) {
+    if (entity instanceof Array) throw new Error('Not impolemented')
+
     const db = new pg.Client(DATABASE_CONNECTION_STRING)
     await db.connect()
     await addSchema(db)

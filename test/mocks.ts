@@ -1,6 +1,7 @@
-import { EntityRepository } from '../src/EntityRepository.js'
+import { Entity } from '../src/es/entity.js'
 import { EntityHistory } from '../src/es/entity-history.js'
-import { Entity, EventPublisher } from '../src/es/event-publisher.js'
+import { EventPublisher } from '../src/es/event-publisher.js'
+import { EntityRepository } from '../src/es/entity-repository.js'
 import { PublishedEvent } from '../src/es/published-event.js'
 
 

@@ -4,6 +4,7 @@ import { EntityVersion } from '../es/entity-version.js'
 import { failFast } from '../es/fail-fast.js'
 import { PublishedEvent } from '../es/published-event.js'
 import { UnpublishedEvent } from '../es/unpublished-event.js'
+import { Entity } from '../es/entity.js'
 import { ItemEvent, ItemType, Progress } from './enums.js'
 
 type AddEvent =
@@ -13,15 +14,6 @@ type AddEvent =
 & ((this: Item, event: ItemEvent.ChildrenRemoved, details: { children: [ string ] }) => void)
 & ((this: Item, event: ItemEvent.ParentChanged, details: { parent: string|null }) => void)
 & ((this: Item, event: ItemEvent.ProgressChanged, details: { progress: Progress }) => void)
-
-abstract class Entity {
-  readonly unpublishedEvents: UnpublishedEvent[] = []
-
-  constructor(readonly id: CanonicalEntityId, readonly version: EntityVersion) {
-    failFast.unlessInstanceOf(CanonicalEntityId)(id, 'id')
-    failFast.unlessInstanceOf(EntityVersion)(version, 'version')
-  }
-}
 
 export class Item extends Entity {
   static readonly TYPE_CODE = 'Item'
