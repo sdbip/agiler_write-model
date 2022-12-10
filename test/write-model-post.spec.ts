@@ -37,6 +37,13 @@ describe('write model', () => {
         new UnpublishedEvent(ItemEvent.Created, { title: 'Get shit done', type: ItemType.Task }),
       ])
     })
+
+    it('returns the created id', async () => {
+      const response = await post({ title: 'Get shit done' })
+
+      assert.equal(response.statusCode, 200)
+      assert.deepEqual(JSON.parse(response.content), publisher.lastPublishedEntity?.id)
+    })
   })
 })
 

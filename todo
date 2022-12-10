@@ -1,6 +1,5 @@
 # Stories
 * Tasks
-  * add task
   - complete
   - promote to Story
 - Story
@@ -10,7 +9,4 @@
   - add child (become Epic)
 
 # Tasks
-- Add POST /item endpoint
-  - Create Dependency Inversion interfaces
 - Project events to the read-model
-- Check the path of schema.sql. Will it fail for dist/?

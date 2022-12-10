@@ -18,25 +18,25 @@ setup.post('/item', async (request) => {
   const item = Item.new(body.title)
   await publisher.publishChanges(item, 'write-model')
   return {
-    statusCode: 201,
-    content: '',
-  }
-
-  async function readBody(request: Request): Promise<any> {
-    return await new Promise((resolve, reject) => {
-      request.setEncoding('utf-8')
-      let body = ''
-      request.on('data', data => { body += data })
-      request.on('end', () => {
-        try {
-          resolve(JSON.parse(body))
-        } catch (error: any) {
-          reject({ error: error.toString() })
-        }
-      })
-    })
+    statusCode: 200,
+    content: JSON.stringify(item.id),
   }
 })
+
+async function readBody(request: Request): Promise<any> {
+  return await new Promise((resolve, reject) => {
+    request.setEncoding('utf-8')
+    let body = ''
+    request.on('data', data => { body += data })
+    request.on('end', () => {
+      try {
+        resolve(JSON.parse(body))
+      } catch (error: any) {
+        reject({ error: error.toString() })
+      }
+    })
+  })
+}
 
 const server = setup.finalize()
 const port = parseInt(process.env.PORT ?? '80') ?? 80
