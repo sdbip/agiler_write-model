@@ -35,6 +35,17 @@ setup.patch('/item/:id/complete', async (request) => {
   return NO_CONTENT
 })
 
+setup.patch('/item/:id/promote', async (request) => {
+  const id = request.params.id as string
+  const history = await repository.getHistoryFor(new CanonicalEntityId(id, Item.TYPE_CODE))
+  if (!history) return NOT_FOUND
+
+  const item = Item.reconstitute(id, history.version, history.events)
+  item.promote()
+  await publisher.publishChanges(item, 'system_actor')
+  return NO_CONTENT
+})
+
 async function readBody(request: Request): Promise<any> {
   return await new Promise((resolve, reject) => {
     request.setEncoding('utf-8')

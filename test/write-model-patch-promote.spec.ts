@@ -1,7 +1,7 @@
 import { assert } from 'chai'
 import { request } from 'http'
 import { PORT } from '../src/config.js'
-import { ItemEvent, Progress } from '../src/domain/enums.js'
+import { ItemEvent, ItemType } from '../src/domain/enums.js'
 import { Item } from '../src/domain/item.js'
 import { CanonicalEntityId } from '../src/es/canonical-entity-id.js'
 import { EntityHistory } from '../src/es/entity-history.js'
@@ -14,7 +14,7 @@ import { Response } from './response.js'
 
 describe('write model', () => {
 
-  describe('PATCH /item/:id/complete', () => {
+  describe('PATCH /item/:id/promote', () => {
 
     const repository = new MockEntityRepository()
     const publisher = new MockEventPublisher()
@@ -31,9 +31,9 @@ describe('write model', () => {
       repository.nextHistory = undefined
     })
 
-    it('publishes "ProgressChanged" event when items are completed [PATCH /item/:id/complete]', async () => {
+    it('publishes "TypeChanged" event when items are promoted [PATCH /item/:id/promote]', async () => {
       repository.nextHistory = new EntityHistory(EntityVersion.of(0), [])
-      const response = await complete('id')
+      const response = await promote('id')
 
       assert.equal(response.statusCode, StatusCode.NoContent)
       assert.deepEqual(repository.lastRequestedEntity, new CanonicalEntityId('id', Item.TYPE_CODE))
@@ -43,26 +43,26 @@ describe('write model', () => {
         {
           actor: 'system_actor',
           event: {
-            name: ItemEvent.ProgressChanged,
-            details: { progress: Progress.Completed },
+            name: ItemEvent.TypeChanged,
+            details: { type: ItemType.Story },
           },
         })
       assert.equal(publisher.lastPublishedEntity?.id.type, Item.TYPE_CODE)
     })
 
-    it('returns 404 if not found [PATCH /item/:id/complete]', async () => {
-      const response = await complete('id')
+    it('returns 404 if not found [PATCH /item/:id/promote]', async () => {
+      const response = await promote('id')
 
       assert.equal(response.statusCode, StatusCode.NotFound)
     })
   })
 })
 
-function complete(id: string) {
+function promote(id: string) {
   const options = {
     hostname: 'localhost',
     port: PORT,
-    path: `/item/${id}/complete`,
+    path: `/item/${id}/promote`,
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
