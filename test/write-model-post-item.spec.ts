@@ -21,8 +21,7 @@ describe('write model', () => {
   after(stop)
 
   beforeEach(() => {
-    publisher.lastPublishedActor = undefined
-    publisher.lastPublishedEntity = undefined
+    publisher.reset()
   })
 
   describe('POST /item', () => {
@@ -31,10 +30,10 @@ describe('write model', () => {
       const response = await post({ title: 'Get shit done' })
 
       assert.equal(response.statusCode, StatusCode.Created)
-      assert.equal(publisher.lastPublishedEntity?.id.type, Item.TYPE_CODE)
-      assert.equal(publisher.lastPublishedEntity?.version, EntityVersion.new)
-      assert.lengthOf(publisher.publishedEvents, 1)
-      assert.deepEqual(publisher.publishedEvents[0], {
+      assert.equal(publisher.lastPublishedEntities[0]?.id.type, Item.TYPE_CODE)
+      assert.equal(publisher.lastPublishedEntities[0]?.version, EntityVersion.new)
+      assert.lengthOf(publisher.lastPublishedEvents, 1)
+      assert.deepEqual(publisher.lastPublishedEvents[0], {
         actor: 'system_actor',
         event: new PublishedEvent(ItemEvent.Created, { title: 'Get shit done', type: ItemType.Task }),
       })
@@ -44,7 +43,7 @@ describe('write model', () => {
       const response = await post({ title: 'Get shit done' })
 
       assert.equal(response.statusCode, StatusCode.Created)
-      assert.deepEqual(JSON.parse(response.content), publisher.lastPublishedEntity?.id)
+      assert.deepEqual(JSON.parse(response.content), publisher.lastPublishedEntities[0]?.id)
     })
   })
 
@@ -57,10 +56,10 @@ describe('write model', () => {
       })
 
       assert.equal(response.statusCode, StatusCode.Created)
-      assert.equal(publisher.lastPublishedEntity?.id.type, Item.TYPE_CODE)
-      assert.equal(publisher.lastPublishedEntity?.version, EntityVersion.new)
-      assert.lengthOf(publisher.publishedEvents, 1)
-      assert.deepInclude(publisher.publishedEvents[0], {
+      assert.equal(publisher.lastPublishedEntities[0]?.id.type, Item.TYPE_CODE)
+      assert.equal(publisher.lastPublishedEntities[0]?.version, EntityVersion.new)
+      assert.lengthOf(publisher.lastPublishedEvents, 1)
+      assert.deepInclude(publisher.lastPublishedEvents[0], {
         actor: 'system_actor',
         event: {
           name: ItemEvent.Created,

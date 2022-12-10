@@ -13,25 +13,40 @@ export class MockEntityRepository implements EntityRepository {
     this.lastRequestedEntity = entity
     return this.nextHistory
   }
+
+  reset() {
+    this.nextHistory = undefined
+    this.lastRequestedEntity = undefined
+  }
 }
 
 export class MockEventPublisher implements EventPublisher {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   async publish() { }
 
-  lastPublishedEntity?: Entity
   lastPublishedActor?: string
-  publishedEvents: any[] = []
+  lastPublishedEntities: Entity[] = []
+  lastPublishedEvents: { actor: string, event: PublishedEvent }[] = []
 
-  async publishChanges(entity: Entity, actor: string): Promise<void> {
+  async publishChanges(entity: Entity | Entity[], actor: string): Promise<void> {
+    const entities = entity instanceof Array ? entity : [ entity ]
     this.lastPublishedActor = actor
-    this.lastPublishedEntity = { ...entity }
-    this.publishedEvents = entity.unpublishedEvents.map(e => ({
-      actor,
-      event: new PublishedEvent(
-        e.name,
-        e.details,
-      ),
-    }))
+    this.lastPublishedEntities = entities
+    this.lastPublishedEvents = entities
+      .map(e => e.unpublishedEvents)
+      .flat()
+      .map(e => ({
+        actor,
+        event: new PublishedEvent(
+          e.name,
+          e.details,
+        ),
+      }))
+  }
+
+  reset() {
+    this.lastPublishedActor = undefined
+    this.lastPublishedEntities = []
+    this.lastPublishedEvents = []
   }
 }

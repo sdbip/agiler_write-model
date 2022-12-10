@@ -25,10 +25,8 @@ describe('write model', () => {
     after(stop)
 
     beforeEach(() => {
-      publisher.lastPublishedActor = undefined
-      publisher.lastPublishedEntity = undefined
-      repository.lastRequestedEntity = undefined
-      repository.nextHistory = undefined
+      publisher.reset()
+      repository.reset()
     })
 
     it('publishes "ProgressChanged" event when items are completed [PATCH /item/:id/complete]', async () => {
@@ -37,9 +35,9 @@ describe('write model', () => {
 
       assert.equal(response.statusCode, StatusCode.NoContent)
       assert.deepEqual(repository.lastRequestedEntity, new CanonicalEntityId('id', Item.TYPE_CODE))
-      assert.lengthOf(publisher.publishedEvents, 1)
+      assert.lengthOf(publisher.lastPublishedEvents as never[], 1)
       assert.deepInclude(
-        publisher.publishedEvents[0],
+        publisher.lastPublishedEvents[0],
         {
           actor: 'system_actor',
           event: {
@@ -47,7 +45,9 @@ describe('write model', () => {
             details: { progress: Progress.Completed },
           },
         })
-      assert.equal(publisher.lastPublishedEntity?.id.type, Item.TYPE_CODE)
+      assert.exists(publisher.lastPublishedEntities)
+      assert.lengthOf(publisher.lastPublishedEntities, 1)
+      assert.equal(publisher.lastPublishedEntities[0]?.id.type, Item.TYPE_CODE)
     })
 
     it('returns 404 if not found [PATCH /item/:id/complete]', async () => {

@@ -24,6 +24,24 @@ setup.post('/item', async (request) => {
   }
 })
 
+setup.post('/item/:id/child', async (request) => {
+  const id = request.params.id as string
+  const body = await readBody(request)
+
+  const history = await repository.getHistoryFor(new CanonicalEntityId(id, Item.TYPE_CODE))
+  if (!history) return NOT_FOUND
+
+  const parent = Item.reconstitute(id, history.version, history.events)
+  const item = Item.new(body.title, body.type)
+  parent.add(item)
+
+  await publisher.publishChanges([ parent, item ], 'system_actor')
+  return {
+    statusCode: StatusCode.Created,
+    content: JSON.stringify(item.id),
+  }
+})
+
 setup.patch('/item/:id/complete', async (request) => {
   const id = request.params.id as string
   const history = await repository.getHistoryFor(new CanonicalEntityId(id, Item.TYPE_CODE))
