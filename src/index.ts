@@ -16,8 +16,8 @@ setup.get('/', async () => {
 
 setup.post('/item', async (request) => {
   const body = await readBody(request)
-  const item = Item.new(body.title)
-  await publisher.publishChanges(item, 'write-model')
+  const item = Item.new(body.title, body.type)
+  await publisher.publishChanges(item, 'system_actor')
   return {
     statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),

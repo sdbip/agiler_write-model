@@ -4,7 +4,7 @@ import { PORT } from '../src/config.js'
 import { ItemEvent, ItemType } from '../src/domain/enums.js'
 import { Item } from '../src/domain/item.js'
 import { EntityVersion } from '../src/es/entity-version.js'
-import { UnpublishedEvent } from '../src/es/unpublished-event.js'
+import { PublishedEvent } from '../src/es/published-event.js'
 import { start, stop } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
 import { MockEntityRepository, MockEventPublisher } from './mocks.js'
@@ -28,13 +28,16 @@ describe('write model', () => {
   describe('POST /item', () => {
 
     it('publishes "Created" event', async () => {
-      await post({ title: 'Get shit done' })
+      const response = await post({ title: 'Get shit done' })
 
+      assert.equal(response.statusCode, StatusCode.Created)
       assert.equal(publisher.lastPublishedEntity?.id.type, Item.TYPE_CODE)
       assert.equal(publisher.lastPublishedEntity?.version, EntityVersion.new)
-      assert.deepEqual(publisher.lastPublishedEntity?.unpublishedEvents, [
-        new UnpublishedEvent(ItemEvent.Created, { title: 'Get shit done', type: ItemType.Task }),
-      ])
+      assert.lengthOf(publisher.publishedEvents, 1)
+      assert.deepEqual(publisher.publishedEvents[0], {
+        actor: 'system_actor',
+        event: new PublishedEvent(ItemEvent.Created, { title: 'Get shit done', type: ItemType.Task }),
+      })
     })
 
     it('returns the created id', async () => {
@@ -44,10 +47,33 @@ describe('write model', () => {
       assert.deepEqual(JSON.parse(response.content), publisher.lastPublishedEntity?.id)
     })
   })
+
+  describe('POST /item (feature)', () => {
+
+    it('publishes "Created" event', async () => {
+      const response = await post({
+        title: 'Produce some value',
+        type: ItemType.Feature,
+      })
+
+      assert.equal(response.statusCode, StatusCode.Created)
+      assert.equal(publisher.lastPublishedEntity?.id.type, Item.TYPE_CODE)
+      assert.equal(publisher.lastPublishedEntity?.version, EntityVersion.new)
+      assert.lengthOf(publisher.publishedEvents, 1)
+      assert.deepInclude(publisher.publishedEvents[0], {
+        actor: 'system_actor',
+        event: {
+          name: ItemEvent.Created,
+          details: { title: 'Produce some value', type: ItemType.Feature },
+        },
+      })
+    })
+  })
 })
 
 type Body = {
   title: string
+  type?: ItemType
 }
 
 function post(body: Body) {
