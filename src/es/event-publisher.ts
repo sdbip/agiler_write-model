@@ -87,6 +87,6 @@ async function transaction(db: pg.Client, action: (db: pg.Client) => Promise<voi
 }
 
 async function addSchema(db: pg.Client) {
-  const schema = await fs.readFile('./src/es/schema.sql')
+  const schema = await fs.readFile('./schema/es.sql')
   await db.query(schema.toString('utf-8'))
 }

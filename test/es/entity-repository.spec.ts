@@ -18,7 +18,7 @@ describe(EntityRepository.name, () => {
 
   beforeEach(async () => {
 
-    const schemaDDL = await fs.readFile('./src/es/schema.sql')
+    const schemaDDL = await fs.readFile('./schema/es.sql')
 
     db = new pg.Client(DATABASE_CONNECTION_STRING)
     await db.connect()
