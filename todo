@@ -9,3 +9,4 @@
 - Rename parent -> parentId in ParentChanged?
 - Add abstraction over Chai
   - assert.throws(async)
+- Launch a PGSQL docker instance for tests
