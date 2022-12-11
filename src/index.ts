@@ -102,14 +102,17 @@ server.listenAtPort(port)
 
 process.stdout.write(`\x1B[35mListening on port \x1B[30m${port ?? '80'}\x1B[0m\n\n`)
 
-export function start({ projection: testProjection, repository: testRepository, publisher: testPublisher }: { repository?: EntityRepository, publisher?: EventPublisher, projection?: EventProjection }) {
+export function injectServices({ projection: testProjection, repository: testRepository, publisher: testPublisher }: { repository?: EntityRepository, publisher?: EventPublisher, projection?: EventProjection }) {
   if (testRepository) repository = testRepository
   if (testPublisher) publisher = testPublisher
   if (testProjection) projection = testProjection
+}
+
+export function startServer() {
   server.stopListening()
   server.listenAtPort(port)
 }
 
-export function stop() {
+export function stopServer() {
   server.stopListening()
 }

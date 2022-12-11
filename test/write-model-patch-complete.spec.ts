@@ -5,7 +5,7 @@ import { ItemEvent, Progress } from '../src/domain/enums.js'
 import { Item } from '../src/domain/item.js'
 import { EntityHistory } from '../src/es/entity-history.js'
 import { EntityVersion } from '../src/es/entity-version.js'
-import { start, stop } from '../src/index.js'
+import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
 import { MockEventPublisher, MockEntityRepository, MockEventProjection } from './mocks.js'
 import { readResponse } from './read-response.js'
@@ -13,22 +13,21 @@ import { Response } from './response.js'
 
 describe('write model', () => {
 
+  let repository: MockEntityRepository
+  let publisher: MockEventPublisher
+  let projection: MockEventProjection
+
+  before(startServer)
+  after(stopServer)
+
+  beforeEach(() => {
+    repository = new MockEntityRepository()
+    publisher = new MockEventPublisher()
+    projection = new MockEventProjection()
+    injectServices({ repository, publisher, projection })
+  })
+
   describe('PATCH /item/:id/complete', () => {
-
-    const repository = new MockEntityRepository()
-    const publisher = new MockEventPublisher()
-    const projection = new MockEventProjection()
-
-    before(() => {
-      start({ repository, publisher, projection })
-    })
-    after(stop)
-
-    beforeEach(() => {
-      publisher.reset()
-      projection.reset()
-      repository.reset()
-    })
 
     it('publishes "ProgressChanged" event when items are completed', async () => {
       repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])

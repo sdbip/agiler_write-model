@@ -5,23 +5,22 @@ import { Item } from '../src/domain/item.js'
 import { EntityHistory } from '../src/es/entity-history.js'
 import { EntityVersion } from '../src/es/entity-version.js'
 import { PublishedEvent } from '../src/es/published-event.js'
-import { start, stop } from '../src/index.js'
+import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
-import { MockEntityRepository, MockEventPublisher } from './mocks.js'
+import { MockEntityRepository } from './mocks.js'
 import { readResponse } from './read-response.js'
 import { Response } from './response.js'
 
 describe('write model', () => {
 
-  const repository = new MockEntityRepository()
+  let repository: MockEntityRepository
 
-  before(() => {
-    start({ repository })
-  })
-  after(stop)
+  before(startServer)
+  after(stopServer)
 
   beforeEach(() => {
-    repository.reset()
+    repository = new MockEntityRepository()
+    injectServices({ repository })
   })
 
   describe('GET /entity/:id', () => {

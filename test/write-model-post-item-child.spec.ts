@@ -5,7 +5,7 @@ import { ItemEvent, ItemType } from '../src/domain/enums.js'
 import { EntityHistory } from '../src/es/entity-history.js'
 import { EntityVersion } from '../src/es/entity-version.js'
 import { PublishedEvent } from '../src/es/published-event.js'
-import { start, stop } from '../src/index.js'
+import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
 import { MockEntityRepository, MockEventProjection, MockEventPublisher } from './mocks.js'
 import { readResponse } from './read-response.js'
@@ -13,19 +13,18 @@ import { Response } from './response.js'
 
 describe('write model', () => {
 
-  const publisher = new MockEventPublisher()
-  const projection = new MockEventProjection()
-  const repository = new MockEntityRepository()
+  let publisher: MockEventPublisher
+  let projection: MockEventProjection
+  let repository: MockEntityRepository
 
-  before(() => {
-    start({ repository, publisher, projection })
-  })
-  after(stop)
+  before(startServer)
+  after(stopServer)
 
   beforeEach(() => {
-    publisher.reset()
-    projection.reset()
-    repository.reset()
+    publisher = new MockEventPublisher()
+    projection = new MockEventProjection()
+    repository = new MockEntityRepository()
+    injectServices({ repository, publisher, projection })
   })
 
   describe('POST /item/:id/child', () => {

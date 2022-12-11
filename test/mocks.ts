@@ -11,10 +11,6 @@ export class MockEventProjection extends EventProjection {
   async sync(events: Event[]) {
     this.lastSyncedEvents = events
   }
-
-  reset() {
-    this.lastSyncedEvents = []
-  }
 }
 
 export class MockEntityRepository implements EntityRepository {
@@ -24,11 +20,6 @@ export class MockEntityRepository implements EntityRepository {
   async getHistoryFor(id: string): Promise<EntityHistory | undefined> {
     this.lastRequestedId = id
     return this.nextHistory
-  }
-
-  reset() {
-    this.nextHistory = undefined
-    this.lastRequestedId = undefined
   }
 }
 
@@ -54,11 +45,5 @@ export class MockEventPublisher implements EventPublisher {
           e.details,
         ),
       }))
-  }
-
-  reset() {
-    this.lastPublishedActor = undefined
-    this.lastPublishedEntities = []
-    this.lastPublishedEvents = []
   }
 }
