@@ -1,6 +1,4 @@
 import { assert } from 'chai'
-import { request } from 'http'
-import { PORT } from '../src/config.js'
 import { ItemEvent, Progress } from '../src/domain/enums.js'
 import { Item } from '../src/domain/item.js'
 import { EntityHistory } from '../src/es/entity-history.js'
@@ -8,8 +6,7 @@ import { EntityVersion } from '../src/es/entity-version.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
 import { MockEventPublisher, MockEntityRepository, MockEventProjection } from './mocks.js'
-import { readResponse } from './read-response.js'
-import { Response } from './response.js'
+import { patch } from './http.js'
 
 describe('PATCH /item/:id/complete', () => {
 
@@ -26,6 +23,8 @@ describe('PATCH /item/:id/complete', () => {
     projection = new MockEventProjection()
     injectServices({ repository, publisher, projection })
   })
+
+  const complete = (id: string) => patch(`/item/${id}/complete`)
 
   it('publishes "ProgressChanged" event when items are completed', async () => {
     repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
@@ -75,25 +74,3 @@ describe('PATCH /item/:id/complete', () => {
     assert.equal(response.statusCode, StatusCode.NotFound)
   })
 })
-
-function complete(id: string) {
-  const options = {
-    hostname: 'localhost',
-    port: PORT,
-    path: `/item/${id}/complete`,
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': 0,
-    },
-  }
-
-  return new Promise<Response>((resolve) => {
-    const rq = request(options, async response => {
-      const result = await readResponse(response)
-      resolve(result)
-    })
-
-    rq.end()
-  })
-}

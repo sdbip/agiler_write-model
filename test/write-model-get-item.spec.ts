@@ -1,6 +1,4 @@
 import { assert } from 'chai'
-import http from 'http'
-import { PORT } from '../src/config.js'
 import { Item } from '../src/domain/item.js'
 import { EntityHistory } from '../src/es/entity-history.js'
 import { EntityVersion } from '../src/es/entity-version.js'
@@ -8,8 +6,7 @@ import { PublishedEvent } from '../src/es/published-event.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
 import { MockEntityRepository } from './mocks.js'
-import { readResponse } from './read-response.js'
-import { Response } from './response.js'
+import { get } from './http.js'
 
 describe('GET /item/:id', () => {
 
@@ -23,9 +20,11 @@ describe('GET /item/:id', () => {
     injectServices({ repository })
   })
 
+  const getEntity = (id: string) => get(`/item/${id}`)
+
   it('returns the complete history of the item', async () => {
     repository.nextHistory = new EntityHistory(
-      'Item',
+      Item.TYPE_CODE,
       EntityVersion.of(2),
       [ new PublishedEvent('event', { value: 12 }) ],
     )
@@ -49,15 +48,3 @@ describe('GET /item/:id', () => {
     assert.equal(response.statusCode, StatusCode.NotFound)
   })
 })
-
-function getEntity(id: string) { return get(`http://localhost:${PORT}/item/${id}`) }
-
-function get(url: string) {
-  return new Promise<Response>((resolve) => {
-    const request = http.get(url, async response => {
-      resolve(await readResponse(response))
-    })
-
-    request.end()
-  })
-}
