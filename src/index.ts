@@ -10,11 +10,6 @@ let publisher = new EventPublisher()
 let projection = new EventProjection()
 
 const setup = setupServer()
-setup.get('/entity/:id', async (request) => {
-  const id = request.params.id as string
-  const history = await repository.getHistoryFor(id)
-  return history ?? NOT_FOUND
-})
 
 setup.post('/item', async (request) => {
   const body = await readBody(request)
@@ -25,6 +20,12 @@ setup.post('/item', async (request) => {
     statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),
   }
+})
+
+setup.get('/item/:id', async (request) => {
+  const id = request.params.id as string
+  const history = await repository.getHistoryFor(id)
+  return history ?? NOT_FOUND
 })
 
 setup.post('/item/:id/child', async (request) => {

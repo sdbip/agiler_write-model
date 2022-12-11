@@ -11,7 +11,7 @@ import { MockEntityRepository } from './mocks.js'
 import { readResponse } from './read-response.js'
 import { Response } from './response.js'
 
-describe('GET /entity/:id', () => {
+describe('GET /item/:id', () => {
 
   let repository: MockEntityRepository
 
@@ -23,7 +23,7 @@ describe('GET /entity/:id', () => {
     injectServices({ repository })
   })
 
-  it('returns the complete history of the entity', async () => {
+  it('returns the complete history of the item', async () => {
     repository.nextHistory = new EntityHistory(
       'Item',
       EntityVersion.of(2),
@@ -50,7 +50,7 @@ describe('GET /entity/:id', () => {
   })
 })
 
-function getEntity(id: string) { return get(`http://localhost:${PORT}/entity/${id}`) }
+function getEntity(id: string) { return get(`http://localhost:${PORT}/item/${id}`) }
 
 function get(url: string) {
   return new Promise<Response>((resolve) => {
