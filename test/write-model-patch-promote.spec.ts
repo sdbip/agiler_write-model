@@ -11,7 +11,7 @@ import { MockEventPublisher, MockEntityRepository, MockEventProjection } from '.
 import { readResponse } from './read-response.js'
 import { Response } from './response.js'
 
-describe('write model', () => {
+describe('PATCH /item/:id/promote', () => {
 
   let repository: MockEntityRepository
   let publisher: MockEventPublisher
@@ -28,53 +28,50 @@ describe('write model', () => {
     injectServices({ repository, publisher, projection })
   })
 
-  describe('PATCH /item/:id/promote', () => {
+  it('publishes "TypeChanged" event when items are promoted', async () => {
+    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+    const response = await promote('id')
 
-    it('publishes "TypeChanged" event when items are promoted', async () => {
-      repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
-      const response = await promote('id')
-
-      assert.equal(response.statusCode, StatusCode.NoContent)
-      assert.deepEqual(repository.lastRequestedId, 'id')
-      assert.lengthOf(publisher.lastPublishedEvents as never[], 1)
-      assert.deepInclude(
-        publisher.lastPublishedEvents[0],
-        {
-          actor: 'system_actor',
-          event: {
-            name: ItemEvent.TypeChanged,
-            details: { type: ItemType.Story },
-          },
-        })
-      assert.equal(publisher.lastPublishedEntities[0]?.id.type, Item.TYPE_CODE)
-    })
-
-    it('projects "Created" event', async () => {
-      repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
-      await promote('id')
-
-      assert.lengthOf(projection.lastSyncedEvents, 1)
-      assert.deepInclude(
-        projection.lastSyncedEvents[0],
-        {
+    assert.equal(response.statusCode, StatusCode.NoContent)
+    assert.deepEqual(repository.lastRequestedId, 'id')
+    assert.lengthOf(publisher.lastPublishedEvents as never[], 1)
+    assert.deepInclude(
+      publisher.lastPublishedEvents[0],
+      {
+        actor: 'system_actor',
+        event: {
           name: ItemEvent.TypeChanged,
           details: { type: ItemType.Story },
-        })
-      assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
-    })
+        },
+      })
+    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Item.TYPE_CODE)
+  })
 
-    it('returns 404 if not found', async () => {
-      const response = await promote('id')
+  it('projects "Created" event', async () => {
+    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+    await promote('id')
 
-      assert.equal(response.statusCode, StatusCode.NotFound)
-    })
+    assert.lengthOf(projection.lastSyncedEvents, 1)
+    assert.deepInclude(
+      projection.lastSyncedEvents[0],
+      {
+        name: ItemEvent.TypeChanged,
+        details: { type: ItemType.Story },
+      })
+    assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
+  })
 
-    it('returns 404 if not an Item', async () => {
-      repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
-      const response = await promote('id')
+  it('returns 404 if not found', async () => {
+    const response = await promote('id')
 
-      assert.equal(response.statusCode, StatusCode.NotFound)
-    })
+    assert.equal(response.statusCode, StatusCode.NotFound)
+  })
+
+  it('returns 404 if not an Item', async () => {
+    repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
+    const response = await promote('id')
+
+    assert.equal(response.statusCode, StatusCode.NotFound)
   })
 })
 

@@ -11,7 +11,7 @@ import { MockEntityRepository } from './mocks.js'
 import { readResponse } from './read-response.js'
 import { Response } from './response.js'
 
-describe('write model', () => {
+describe('GET /entity/:id', () => {
 
   let repository: MockEntityRepository
 
@@ -23,33 +23,30 @@ describe('write model', () => {
     injectServices({ repository })
   })
 
-  describe('GET /entity/:id', () => {
+  it('returns the complete history of the entity', async () => {
+    repository.nextHistory = new EntityHistory(
+      'Item',
+      EntityVersion.of(2),
+      [ new PublishedEvent('event', { value: 12 }) ],
+    )
+    const response = await getEntity('id')
 
-    it('returns the complete history of the entity', async () => {
-      repository.nextHistory = new EntityHistory(
-        'Item',
-        EntityVersion.of(2),
-        [ new PublishedEvent('event', { value: 12 }) ],
-      )
-      const response = await getEntity('id')
-
-      assert.equal(response.statusCode, StatusCode.OK)
-      assert.deepEqual(JSON.parse(response.content), {
-        type: Item.TYPE_CODE,
-        version: EntityVersion.of(2),
-        events: [
-          {
-            name: 'event',
-            details: { value: 12 },
-          },
-        ],
-      })
+    assert.equal(response.statusCode, StatusCode.OK)
+    assert.deepEqual(JSON.parse(response.content), {
+      type: Item.TYPE_CODE,
+      version: EntityVersion.of(2),
+      events: [
+        {
+          name: 'event',
+          details: { value: 12 },
+        },
+      ],
     })
+  })
 
-    it('returns 404 if not found', async () => {
-      const response = await getEntity('some_id')
-      assert.equal(response.statusCode, StatusCode.NotFound)
-    })
+  it('returns 404 if not found', async () => {
+    const response = await getEntity('some_id')
+    assert.equal(response.statusCode, StatusCode.NotFound)
   })
 })
 
