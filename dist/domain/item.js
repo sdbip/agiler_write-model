@@ -1,11 +1,8 @@
 import { randomUUID } from 'crypto';
-import { CanonicalEntityId } from '../es/canonical-entity-id.js';
-import { EntityVersion } from '../es/entity-version.js';
-import { failFast } from '../es/fail-fast.js';
-import { UnpublishedEvent } from '../es/unpublished-event.js';
-import { Entity } from '../es/entity.js';
+import { failFast } from '../fail-fast.js';
+import * as source from '../es/source.js';
 import { ItemEvent, ItemType, Progress } from './enums.js';
-export class Item extends Entity {
+export class Item extends source.Entity {
     promote() {
         failFast.unless(this.itemType === ItemType.Task, `Only ${ItemType.Task} items may be promoted`);
         this.itemType = ItemType.Story;
@@ -34,7 +31,7 @@ export class Item extends Entity {
         this.addNewEvent(ItemEvent.ProgressChanged, { progress: Progress.Completed });
     }
     static new(title, type) {
-        const item = new Item(randomUUID(), EntityVersion.new);
+        const item = new Item(randomUUID(), source.EntityVersion.new);
         item.addNewEvent(ItemEvent.Created, { title, type: type !== null && type !== void 0 ? type : ItemType.Task });
         return item;
     }
@@ -55,10 +52,10 @@ export class Item extends Entity {
         return item;
     }
     constructor(id, version) {
-        super(new CanonicalEntityId(id, Item.TYPE_CODE), version);
+        super(new source.CanonicalEntityId(id, Item.TYPE_CODE), version);
         this.itemType = ItemType.Task;
         this.addNewEvent = (event, details) => {
-            this.unpublishedEvents.push(new UnpublishedEvent(event, details));
+            this.unpublishedEvents.push(new source.UnpublishedEvent(event, details));
         };
     }
     removeEventMatching(predicate) {

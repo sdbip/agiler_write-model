@@ -8,20 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 var _a, _b;
-import { EventPublisher } from './es/event-publisher.js';
-import { EntityRepository } from './es/entity-repository.js';
 import { EventProjection } from './es/event-projection.js';
 import { NOT_FOUND, NO_CONTENT, setupServer, StatusCode } from './server.js';
 import { Item } from './domain/item.js';
+import { EntityRepository, EventPublisher } from './es/source.js';
 let repository = new EntityRepository();
 let publisher = new EventPublisher();
 let projection = new EventProjection();
 const setup = setupServer();
-setup.get('/entity/:id', (request) => __awaiter(void 0, void 0, void 0, function* () {
-    const id = request.params.id;
-    const history = yield repository.getHistoryFor(id);
-    return history !== null && history !== void 0 ? history : NOT_FOUND;
-}));
 setup.post('/item', (request) => __awaiter(void 0, void 0, void 0, function* () {
     const body = yield readBody(request);
     const item = Item.new(body.title, body.type);
@@ -31,6 +25,11 @@ setup.post('/item', (request) => __awaiter(void 0, void 0, void 0, function* () 
         statusCode: StatusCode.Created,
         content: JSON.stringify(item.id),
     };
+}));
+setup.get('/item/:id', (request) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = request.params.id;
+    const history = yield repository.getHistoryFor(id);
+    return history !== null && history !== void 0 ? history : NOT_FOUND;
 }));
 setup.post('/item/:id/child', (request) => __awaiter(void 0, void 0, void 0, function* () {
     const id = request.params.id;
@@ -102,16 +101,18 @@ const server = setup.finalize();
 const port = (_b = parseInt((_a = process.env.PORT) !== null && _a !== void 0 ? _a : '80')) !== null && _b !== void 0 ? _b : 80;
 server.listenAtPort(port);
 process.stdout.write(`\x1B[35mListening on port \x1B[30m${port !== null && port !== void 0 ? port : '80'}\x1B[0m\n\n`);
-export function start({ projection: testProjection, repository: testRepository, publisher: testPublisher }) {
+export function injectServices({ projection: testProjection, repository: testRepository, publisher: testPublisher }) {
     if (testRepository)
         repository = testRepository;
     if (testPublisher)
         publisher = testPublisher;
     if (testProjection)
         projection = testProjection;
+}
+export function startServer() {
     server.stopListening();
     server.listenAtPort(port);
 }
-export function stop() {
+export function stopServer() {
     server.stopListening();
 }

@@ -9,8 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import pg from 'pg';
 import { promises as fs } from 'fs';
-import { DATABASE_CONNECTION_STRING } from '../config.js';
-import { EntityVersion } from './entity-version.js';
+import { DATABASE_CONNECTION_STRING } from '../../config.js';
+import * as domain from './domain.js';
 export class EventPublisher {
     publish(event, entity, actor) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -20,7 +20,7 @@ export class EventPublisher {
             yield transaction(db, (db) => __awaiter(this, void 0, void 0, function* () {
                 const currentVersion = yield getVersion(entity, db);
                 const lastPosition = yield getLastPosition(db);
-                if (currentVersion.equals(EntityVersion.new))
+                if (currentVersion.equals(domain.EntityVersion.new))
                     yield insertEntity(entity, db);
                 yield insertEvent(entity, event, actor, currentVersion.next(), lastPosition + 1, db);
             }));
@@ -38,7 +38,7 @@ export class EventPublisher {
                     const currentVersion = yield getVersion(entity.id, db);
                     if (!entity.version.equals(currentVersion))
                         throw new Error(`Concurrent update of entity ${entity.id}`);
-                    if (currentVersion.equals(EntityVersion.new))
+                    if (currentVersion.equals(domain.EntityVersion.new))
                         yield insertEntity(entity.id, db);
                     let version = currentVersion.next();
                     for (const event of entity.unpublishedEvents) {
@@ -66,8 +66,8 @@ function getVersion(entity, db) {
     return __awaiter(this, void 0, void 0, function* () {
         const result = yield db.query('SELECT "version" FROM "entities" WHERE id = $1', [entity.id]);
         return result.rowCount === 0
-            ? EntityVersion.new
-            : EntityVersion.of(result.rows[0].version);
+            ? domain.EntityVersion.new
+            : domain.EntityVersion.of(result.rows[0].version);
     });
 }
 function insertEntity(entity, db) {
