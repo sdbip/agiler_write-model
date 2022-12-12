@@ -1,12 +1,11 @@
 import { assert } from 'chai'
 import { ItemEvent, ItemType } from '../src/domain/enums.js'
 import { Item } from '../src/domain/item.js'
-import { EntityHistory } from '../src/es/entity-history.js'
-import { EntityVersion } from '../src/es/entity-version.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
 import { MockEventPublisher, MockEntityRepository, MockEventProjection } from './mocks.js'
 import { patch } from './http.js'
+import { EntityHistory, EntityVersion } from '../src/es/source.js'
 
 describe('PATCH /item/:id/promote', () => {
 
@@ -28,7 +27,7 @@ describe('PATCH /item/:id/promote', () => {
   const promote = (id: string) => patch(`/item/${id}/promote`)
 
   it('publishes "TypeChanged" event when items are promoted', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Item.TYPE_CODE, EntityVersion.of(0), [])
     const response = await promote('id')
 
     assert.equal(response.statusCode, StatusCode.NoContent)
@@ -47,7 +46,7 @@ describe('PATCH /item/:id/promote', () => {
   })
 
   it('projects "Created" event', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Item.TYPE_CODE, EntityVersion.of(0), [])
     await promote('id')
 
     assert.lengthOf(projection.lastSyncedEvents, 1)

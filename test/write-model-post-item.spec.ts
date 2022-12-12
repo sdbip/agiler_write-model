@@ -1,11 +1,11 @@
 import { assert } from 'chai'
 import { ItemEvent, ItemType } from '../src/domain/enums.js'
 import { Item } from '../src/domain/item.js'
-import { EntityVersion } from '../src/es/entity-version.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
 import { MockEventProjection, MockEventPublisher } from './mocks.js'
 import { post } from './http.js'
+import { EntityVersion } from '../src/es/source.js'
 
 describe('POST /item', () => {
 

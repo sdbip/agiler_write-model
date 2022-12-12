@@ -1,9 +1,7 @@
-import { EventPublisher } from './es/event-publisher.js'
-import { EntityRepository } from './es/entity-repository.js'
 import { EventProjection } from './es/event-projection.js'
 import { NOT_FOUND, NO_CONTENT, Request, setupServer, StatusCode } from './server.js'
 import { Item } from './domain/item.js'
-import { Entity } from './es/entity.js'
+import { Entity, EntityRepository, EventPublisher } from './es/source.js'
 
 let repository = new EntityRepository()
 let publisher = new EventPublisher()

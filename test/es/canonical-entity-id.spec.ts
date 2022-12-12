@@ -1,5 +1,5 @@
 import { assert } from 'chai'
-import { CanonicalEntityId } from '../../src/es/canonical-entity-id.js'
+import { CanonicalEntityId } from '../../src/es/source.js'
 
 describe(CanonicalEntityId.name, () => {
 

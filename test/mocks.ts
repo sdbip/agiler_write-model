@@ -1,9 +1,5 @@
-import { Entity } from '../src/es/entity.js'
-import { EntityHistory } from '../src/es/entity-history.js'
-import { EntityRepository } from '../src/es/entity-repository.js'
 import { Event, EventProjection } from '../src/es/event-projection.js'
-import { EventPublisher } from '../src/es/event-publisher.js'
-import { PublishedEvent } from '../src/es/published-event.js'
+import * as source from '../src/es/source.js'
 
 export class MockEventProjection extends EventProjection {
   lastSyncedEvents: Event[] = []
@@ -13,25 +9,25 @@ export class MockEventProjection extends EventProjection {
   }
 }
 
-export class MockEntityRepository implements EntityRepository {
-  nextHistory?: EntityHistory
+export class MockEntityRepository implements source.EntityRepository {
+  nextHistory?: source.EntityHistory
   lastRequestedId?: string
 
-  async getHistoryFor(id: string): Promise<EntityHistory | undefined> {
+  async getHistoryFor(id: string): Promise<source.EntityHistory | undefined> {
     this.lastRequestedId = id
     return this.nextHistory
   }
 }
 
-export class MockEventPublisher implements EventPublisher {
+export class MockEventPublisher implements source.EventPublisher {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   async publish() { }
 
   lastPublishedActor?: string
-  lastPublishedEntities: Entity[] = []
-  lastPublishedEvents: { actor: string, event: PublishedEvent }[] = []
+  lastPublishedEntities: source.Entity[] = []
+  lastPublishedEvents: { actor: string, event: source.PublishedEvent }[] = []
 
-  async publishChanges(entity: Entity | Entity[], actor: string): Promise<void> {
+  async publishChanges(entity: source.Entity | source.Entity[], actor: string): Promise<void> {
     const entities = entity instanceof Array ? entity : [ entity ]
     this.lastPublishedActor = actor
     this.lastPublishedEntities = entities
@@ -40,7 +36,7 @@ export class MockEventPublisher implements EventPublisher {
       .flat()
       .map(e => ({
         actor,
-        event: new PublishedEvent(
+        event: new source.PublishedEvent(
           e.name,
           e.details,
         ),

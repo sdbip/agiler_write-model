@@ -1,30 +1,29 @@
 import { Item } from '../../src/domain/item.js'
 import { ItemEvent, ItemType } from '../../src/domain/enums.js'
-import { EntityVersion } from '../../src/es/entity-version.js'
-import { PublishedEvent } from '../../src/es/published-event.js'
+import * as source from '../../src/es/source.js'
 
 export const reconstituteStory = (id: string) =>
-  Item.reconstitute(id, EntityVersion.new, [
-    new PublishedEvent(ItemEvent.Created, { type: ItemType.Story }),
+  Item.reconstitute(id, source.EntityVersion.new, [
+    new  source.PublishedEvent(ItemEvent.Created, { type: ItemType.Story }),
   ])
 
 export const reconstituteStoryWithChildren = (childIds: string[], id: string) =>
-  Item.reconstitute(id, EntityVersion.new, [
-    new PublishedEvent(ItemEvent.Created, { type: ItemType.Story }),
-    new PublishedEvent(ItemEvent.ChildrenAdded, { children: childIds }),
+  Item.reconstitute(id, source.EntityVersion.new, [
+    new  source.PublishedEvent(ItemEvent.Created, { type: ItemType.Story }),
+    new  source.PublishedEvent(ItemEvent.ChildrenAdded, { children: childIds }),
   ])
 
 export const reconstituteTask = (id: string) =>
-  Item.reconstitute(id, EntityVersion.new, [])
+  Item.reconstitute(id, source.EntityVersion.new, [])
 
 export const reconstituteTaskWithParent = (parentId: string, id: string) =>
-  Item.reconstitute(id, EntityVersion.new, [
-    new PublishedEvent(ItemEvent.ParentChanged, { parent: parentId }),
+  Item.reconstitute(id, source.EntityVersion.new, [
+    new  source.PublishedEvent(ItemEvent.ParentChanged, { parent: parentId }),
   ])
 
 export const reconstituteFeature = (id: string) =>
-  Item.reconstitute(id, EntityVersion.new, [
-    new PublishedEvent(ItemEvent.Created, { type: ItemType.Feature }),
+  Item.reconstitute(id, source.EntityVersion.new, [
+    new  source.PublishedEvent(ItemEvent.Created, { type: ItemType.Feature }),
   ])
 
 export const reconstitute = {

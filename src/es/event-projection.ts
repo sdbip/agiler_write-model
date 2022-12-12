@@ -1,7 +1,7 @@
 import pg from 'pg'
 import { promises as fs } from 'fs'
 import { DATABASE_CONNECTION_STRING } from '../config.js'
-import { CanonicalEntityId } from './canonical-entity-id.js'
+import { CanonicalEntityId } from './source.js'
 import { ItemEvent, Progress } from '../domain/enums.js'
 import { Item } from '../domain/item.js'
 

@@ -1,12 +1,10 @@
 import { assert } from 'chai'
 import { ItemEvent, ItemType } from '../src/domain/enums.js'
-import { EntityHistory } from '../src/es/entity-history.js'
-import { EntityVersion } from '../src/es/entity-version.js'
-import { PublishedEvent } from '../src/es/published-event.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
 import { MockEntityRepository, MockEventProjection, MockEventPublisher } from './mocks.js'
 import { post } from './http.js'
+import { EntityHistory, EntityVersion, PublishedEvent } from '../src/es/source.js'
 
 describe('POST /item/:id/child', () => {
 

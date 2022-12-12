@@ -1,12 +1,10 @@
 import { assert } from 'chai'
 import { Item } from '../src/domain/item.js'
-import { EntityHistory } from '../src/es/entity-history.js'
-import { EntityVersion } from '../src/es/entity-version.js'
-import { PublishedEvent } from '../src/es/published-event.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
 import { MockEntityRepository } from './mocks.js'
 import { get } from './http.js'
+import { EntityHistory, EntityVersion, PublishedEvent } from '../src/es/source.js'
 
 describe('GET /item/:id', () => {
 

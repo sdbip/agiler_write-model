@@ -1,14 +1,11 @@
 import pg from 'pg'
 import { promises as fs } from 'fs'
-import { DATABASE_CONNECTION_STRING } from '../config.js'
-import { CanonicalEntityId } from './canonical-entity-id.js'
-import { UnpublishedEvent } from './unpublished-event.js'
-import { EntityVersion } from './entity-version.js'
-import { Entity } from './entity.js'
+import { DATABASE_CONNECTION_STRING } from '../../config.js'
+import * as domain from './domain.js'
 
 export class EventPublisher {
 
-  async publish(event: UnpublishedEvent, entity: CanonicalEntityId, actor: string): Promise<void> {
+  async publish(event: domain.UnpublishedEvent, entity: domain.CanonicalEntityId, actor: string): Promise<void> {
     const db = new pg.Client(DATABASE_CONNECTION_STRING)
     await db.connect()
     await addSchema(db)
@@ -17,14 +14,14 @@ export class EventPublisher {
       const currentVersion = await getVersion(entity, db)
       const lastPosition = await getLastPosition(db)
 
-      if (currentVersion.equals(EntityVersion.new))
+      if (currentVersion.equals(domain.EntityVersion.new))
         await insertEntity(entity, db)
 
       await insertEvent(entity, event, actor, currentVersion.next(), lastPosition + 1, db)
     })
   }
 
-  async publishChanges(entityOrEntities: Entity | Entity[], actor: string) {
+  async publishChanges(entityOrEntities: domain.Entity | domain.Entity[], actor: string) {
     const entities = entityOrEntities instanceof Array ? entityOrEntities : [ entityOrEntities ]
 
     const db = new pg.Client(DATABASE_CONNECTION_STRING)
@@ -40,7 +37,7 @@ export class EventPublisher {
         if (!entity.version.equals(currentVersion))
           throw new Error(`Concurrent update of entity ${entity.id}`)
 
-        if (currentVersion.equals(EntityVersion.new))
+        if (currentVersion.equals(domain.EntityVersion.new))
           await insertEntity(entity.id, db)
 
         let version = currentVersion.next()
@@ -53,7 +50,7 @@ export class EventPublisher {
   }
 }
 
-async function insertEvent(entity: CanonicalEntityId, event: UnpublishedEvent, actor: string, version: EntityVersion, position: number, db: pg.Client) {
+async function insertEvent(entity: domain.CanonicalEntityId, event: domain.UnpublishedEvent, actor: string, version: domain.EntityVersion, position: number, db: pg.Client) {
   await db.query('INSERT INTO "events" (entity_id, entity_type, name, details, actor, version, position) VALUES ($1, $2, $3, $4, $5, $6, $7)',
     [ entity.id, entity.type, event.name, JSON.stringify(event.details), actor, version.value, position ])
 }
@@ -63,14 +60,14 @@ async function getLastPosition(db: pg.Client) {
   return positionResult.rows[0].position as number ?? -1
 }
 
-async function getVersion(entity: CanonicalEntityId, db: pg.Client) {
+async function getVersion(entity: domain.CanonicalEntityId, db: pg.Client) {
   const result = await db.query('SELECT "version" FROM "entities" WHERE id = $1', [ entity.id ])
   return result.rowCount === 0
-    ? EntityVersion.new
-    : EntityVersion.of(result.rows[0].version)
+    ? domain.EntityVersion.new
+    : domain.EntityVersion.of(result.rows[0].version)
 }
 
-async function insertEntity(entity: CanonicalEntityId, db: pg.Client) {
+async function insertEntity(entity: domain.CanonicalEntityId, db: pg.Client) {
   await db.query('INSERT INTO "entities" (id, type, version) VALUES ($1, $2, $3)',
     [ entity.id, entity.type, 0 ])
 }

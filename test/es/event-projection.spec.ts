@@ -2,8 +2,8 @@ import { assert } from 'chai'
 import pg from 'pg'
 import { DATABASE_CONNECTION_STRING } from '../../src/config.js'
 import { ItemEvent, ItemType, Progress } from '../../src/domain/enums.js'
-import { CanonicalEntityId } from '../../src/es/canonical-entity-id.js'
 import { EventProjection } from '../../src/es/event-projection.js'
+import { CanonicalEntityId } from '../../src/es/source.js'
 
 describe(EventProjection.name, () => {
 

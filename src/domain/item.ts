@@ -1,10 +1,6 @@
 import { randomUUID } from 'crypto'
-import { CanonicalEntityId } from '../es/canonical-entity-id.js'
-import { EntityVersion } from '../es/entity-version.js'
-import { failFast } from '../es/fail-fast.js'
-import { PublishedEvent } from '../es/published-event.js'
-import { UnpublishedEvent } from '../es/unpublished-event.js'
-import { Entity } from '../es/entity.js'
+import { failFast } from '../fail-fast.js'
+import * as source from '../es/source.js'
 import { ItemEvent, ItemType, Progress } from './enums.js'
 
 type AddEvent =
@@ -15,7 +11,7 @@ type AddEvent =
 & ((this: Item, event: ItemEvent.ParentChanged, details: { parent: string|null }) => void)
 & ((this: Item, event: ItemEvent.ProgressChanged, details: { progress: Progress }) => void)
 
-export class Item extends Entity {
+export class Item extends source.Entity {
   static readonly TYPE_CODE = 'Item'
 
   private itemType = ItemType.Task
@@ -56,12 +52,12 @@ export class Item extends Entity {
   }
 
   static new(title: string, type?: ItemType): Item {
-    const item = new Item(randomUUID(), EntityVersion.new)
+    const item = new Item(randomUUID(), source.EntityVersion.new)
     item.addNewEvent(ItemEvent.Created, { title, type: type ?? ItemType.Task })
     return item
   }
 
-  static reconstitute(id: string, version: EntityVersion, events: PublishedEvent[]) {
+  static reconstitute(id: string, version: source.EntityVersion, events: source.PublishedEvent[]) {
     const item = new Item(id, version)
     for (const event of events) {
       switch (event.name) {
@@ -78,15 +74,15 @@ export class Item extends Entity {
     return item
   }
 
-  private constructor(id: string, version: EntityVersion) { super(new CanonicalEntityId(id, Item.TYPE_CODE), version) }
+  private constructor(id: string, version: source.EntityVersion) { super(new source.CanonicalEntityId(id, Item.TYPE_CODE), version) }
 
-  private removeEventMatching(predicate: (e: UnpublishedEvent) => boolean) {
+  private removeEventMatching(predicate: (e: source.UnpublishedEvent) => boolean) {
     const existingEvent = this.unpublishedEvents.findIndex(predicate)
     if (existingEvent < 0) return
     this.unpublishedEvents.splice(existingEvent, 1)
   }
 
   private addNewEvent: AddEvent = (event, details) => {
-    this.unpublishedEvents.push(new UnpublishedEvent(event, details))
+    this.unpublishedEvents.push(new source.UnpublishedEvent(event, details))
   }
 }

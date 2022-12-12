@@ -1,15 +1,12 @@
 import { assert } from 'chai'
 import pg from 'pg'
 import { DATABASE_CONNECTION_STRING } from '../../src/config.js'
-import { CanonicalEntityId } from '../../src/es/canonical-entity-id.js'
-import { EntityVersion } from '../../src/es/entity-version.js'
-import { EventPublisher } from '../../src/es/event-publisher.js'
-import { UnpublishedEvent } from '../../src/es/unpublished-event.js'
+import * as source from '../../src/es/source.js'
 
-describe(EventPublisher.name, () => {
+describe(source.EventPublisher.name, () => {
 
   let db: pg.Client
-  const publisher = new EventPublisher()
+  const publisher = new source.EventPublisher()
 
   beforeEach(async () => {
     db = new pg.Client(DATABASE_CONNECTION_STRING)
@@ -25,8 +22,8 @@ describe(EventPublisher.name, () => {
   describe('publish(single event)', () => {
 
     it('creates entity if it does not exist', async () => {
-      const entity = new CanonicalEntityId('entity', 'type')
-      const event = new UnpublishedEvent('event', { value: 1 })
+      const entity = new source.CanonicalEntityId('entity', 'type')
+      const event = new source.UnpublishedEvent('event', { value: 1 })
       await publisher.publish(event, entity, 'test-system')
 
       const rs = await db.query('SELECT * FROM "entities"')
@@ -39,8 +36,8 @@ describe(EventPublisher.name, () => {
     })
 
     it('does not create entity twice', async () => {
-      const entity = new CanonicalEntityId('entity', 'type')
-      const event = new UnpublishedEvent('event', { value: 1 })
+      const entity = new source.CanonicalEntityId('entity', 'type')
+      const event = new source.UnpublishedEvent('event', { value: 1 })
       await publisher.publish(event, entity, 'test-system')
       await publisher.publish(event, entity, 'test-system')
 
@@ -49,8 +46,8 @@ describe(EventPublisher.name, () => {
     })
 
     it('publishes the event', async () => {
-      const entity = new CanonicalEntityId('entity', 'type')
-      const event = new UnpublishedEvent('event', { value: 1 })
+      const entity = new source.CanonicalEntityId('entity', 'type')
+      const event = new source.UnpublishedEvent('event', { value: 1 })
       await publisher.publish(event, entity, 'test-system')
 
       const rs = await db.query('SELECT * FROM "events"')
@@ -71,9 +68,9 @@ describe(EventPublisher.name, () => {
     })
 
     it('assigns positioning information to events', async () => {
-      const entity = new CanonicalEntityId('entity', 'type')
-      await publisher.publish(new UnpublishedEvent('event1', {}), entity, 'test-system')
-      await publisher.publish(new UnpublishedEvent('event2', {}), entity, 'test-system')
+      const entity = new source.CanonicalEntityId('entity', 'type')
+      await publisher.publish(new source.UnpublishedEvent('event1', {}), entity, 'test-system')
+      await publisher.publish(new source.UnpublishedEvent('event2', {}), entity, 'test-system')
 
       const rs = await db.query('SELECT * FROM "events" ORDER BY "version"')
       assert.lengthOf(rs.rows, 2)
@@ -86,8 +83,8 @@ describe(EventPublisher.name, () => {
 
     it('creates entity if it does not exist', async () => {
       const entity = {
-        id: new CanonicalEntityId('entity', 'type'),
-        version: EntityVersion.new,
+        id: new source.CanonicalEntityId('entity', 'type'),
+        version: source.EntityVersion.new,
         unpublishedEvents: [],
       }
       await publisher.publishChanges(entity, 'test.system')
@@ -103,13 +100,13 @@ describe(EventPublisher.name, () => {
 
     it('does not create entity twice', async () => {
       await publisher.publishChanges({
-        id: new CanonicalEntityId('entity', 'type'),
-        version: EntityVersion.new,
+        id: new source.CanonicalEntityId('entity', 'type'),
+        version: source.EntityVersion.new,
         unpublishedEvents: [],
       }, 'test.system')
       await publisher.publishChanges({
-        id: new CanonicalEntityId('entity', 'type'),
-        version: EntityVersion.of(0),
+        id: new source.CanonicalEntityId('entity', 'type'),
+        version: source.EntityVersion.of(0),
         unpublishedEvents: [],
       }, 'test.system')
 
@@ -124,11 +121,11 @@ describe(EventPublisher.name, () => {
 
     it('publishes events', async () => {
       const entity = {
-        id: new CanonicalEntityId('entity', 'type'),
-        version: EntityVersion.new,
+        id: new source.CanonicalEntityId('entity', 'type'),
+        version: source.EntityVersion.new,
         unpublishedEvents: [
-          new UnpublishedEvent('event1', { value: 1 }),
-          new UnpublishedEvent('event2', {}),
+          new source.UnpublishedEvent('event1', { value: 1 }),
+          new source.UnpublishedEvent('event2', {}),
         ],
       }
       await publisher.publishChanges(entity, 'test-system')
@@ -166,12 +163,12 @@ describe(EventPublisher.name, () => {
     it('does not publish if entity has already changed', async () => {
 
       const entity = {
-        id: new CanonicalEntityId('entity', 'type'),
+        id: new source.CanonicalEntityId('entity', 'type'),
         unpublishedEvents: [],
-        version: EntityVersion.new,
+        version: source.EntityVersion.new,
       }
 
-      const event = new UnpublishedEvent('event', { value: 1 })
+      const event = new source.UnpublishedEvent('event', { value: 1 })
       await publisher.publish(event, entity.id, 'test-system')
 
       let caught: unknown
@@ -192,8 +189,8 @@ describe(EventPublisher.name, () => {
 
     it('creates entities if they do not exist', async () => {
       const entity = {
-        id: new CanonicalEntityId('entity', 'type'),
-        version: EntityVersion.new,
+        id: new source.CanonicalEntityId('entity', 'type'),
+        version: source.EntityVersion.new,
         unpublishedEvents: [],
       }
       await publisher.publishChanges([ entity ], 'test.system')
@@ -209,8 +206,8 @@ describe(EventPublisher.name, () => {
 
     it('throws if same entity is included twice', async () => {
       const entity = {
-        id: new CanonicalEntityId('entity', 'type'),
-        version: EntityVersion.new,
+        id: new source.CanonicalEntityId('entity', 'type'),
+        version: source.EntityVersion.new,
         unpublishedEvents: [],
       }
 
@@ -228,19 +225,19 @@ describe(EventPublisher.name, () => {
 
     it('publishes all events', async () => {
       const entity1 = {
-        id: new CanonicalEntityId('entity1', 'type'),
-        version: EntityVersion.new,
+        id: new source.CanonicalEntityId('entity1', 'type'),
+        version: source.EntityVersion.new,
         unpublishedEvents: [
-          new UnpublishedEvent('event1', { value: 1 }),
-          new UnpublishedEvent('event2', {}),
+          new source.UnpublishedEvent('event1', { value: 1 }),
+          new source.UnpublishedEvent('event2', {}),
         ],
       }
       const entity2 = {
-        id: new CanonicalEntityId('entity2', 'type'),
-        version: EntityVersion.new,
+        id: new source.CanonicalEntityId('entity2', 'type'),
+        version: source.EntityVersion.new,
         unpublishedEvents: [
-          new UnpublishedEvent('event1', { value: 1 }),
-          new UnpublishedEvent('event2', {}),
+          new source.UnpublishedEvent('event1', { value: 1 }),
+          new source.UnpublishedEvent('event2', {}),
         ],
       }
       await publisher.publishChanges([ entity1, entity2 ], 'test-system')
@@ -252,12 +249,12 @@ describe(EventPublisher.name, () => {
     it('does not publish if entity has already changed', async () => {
 
       const entity = {
-        id: new CanonicalEntityId('entity', 'type'),
+        id: new source.CanonicalEntityId('entity', 'type'),
         unpublishedEvents: [],
-        version: EntityVersion.new,
+        version: source.EntityVersion.new,
       }
 
-      const event = new UnpublishedEvent('event', { value: 1 })
+      const event = new source.UnpublishedEvent('event', { value: 1 })
       await publisher.publish(event, entity.id, 'test-system')
 
       let caught: unknown
