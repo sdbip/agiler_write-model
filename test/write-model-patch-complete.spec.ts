@@ -5,22 +5,22 @@ import { EntityHistory } from '../src/es/entity-history.js'
 import { EntityVersion } from '../src/es/entity-version.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/server.js'
-import { MockEventPublisher, MockEntityRepository, MockEventProjection } from './mocks.js'
+import * as mocks from './mocks.js'
 import { patch } from './http.js'
 
 describe('PATCH /item/:id/complete', () => {
 
-  let repository: MockEntityRepository
-  let publisher: MockEventPublisher
-  let projection: MockEventProjection
+  let repository: mocks.MockEntityRepository
+  let publisher: mocks.MockEventPublisher
+  let projection: mocks.MockEventProjection
 
   before(startServer)
   after(stopServer)
 
   beforeEach(() => {
-    repository = new MockEntityRepository()
-    publisher = new MockEventPublisher()
-    projection = new MockEventProjection()
+    repository = new mocks.MockEntityRepository()
+    publisher = new mocks.MockEventPublisher()
+    projection = new mocks.MockEventProjection()
     injectServices({ repository, publisher, projection })
   })
 
