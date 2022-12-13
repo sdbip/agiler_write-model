@@ -2,6 +2,7 @@
 - Assign task to team member (user)
 
 # Tasks
+- README.md
 - Identify user as actor
 - Add inProgress
 - Integration tests between projection and read-model

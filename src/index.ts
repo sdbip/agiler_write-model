@@ -7,7 +7,7 @@ let repository = new EntityRepository()
 let publisher = new EventPublisher()
 let projection = new EventProjection()
 
-const setup = setupServer()
+const setup = setupServer({ origin: '*' })
 
 setup.post('/item', async (request) => {
   const body = await readBody(request)
