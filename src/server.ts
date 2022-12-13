@@ -31,9 +31,9 @@ export interface ServerSetup {
 export const NOT_FOUND: Response = { statusCode: StatusCode.NotFound }
 export const NO_CONTENT: Response = { statusCode: StatusCode.NoContent }
 
-export const setupServer = (corsRules: cors.CorsOptions): ServerSetup => {
+export const setupServer = (): ServerSetup => {
   const app = express()
-  app.use(cors(corsRules))
+  app.use(cors())
 
   function wrapHandler(handler: Handler) {
     return async (request: express.Request, response: express.Response) => {
@@ -74,6 +74,7 @@ export const setupServer = (corsRules: cors.CorsOptions): ServerSetup => {
     function outputResult(response: express.Response, result: NormalizedResponse) {
       const responseData = result as Response
       response.statusCode = responseData?.statusCode ?? StatusCode.OK
+      response.setHeader('Content-Type', 'application/json')
 
       response.end(result.content)
     }

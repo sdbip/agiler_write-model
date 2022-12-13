@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import express from 'express';
+import cors from 'cors';
 import { createServer } from 'http';
 export var StatusCode;
 (function (StatusCode) {
@@ -21,6 +22,7 @@ export const NOT_FOUND = { statusCode: StatusCode.NotFound };
 export const NO_CONTENT = { statusCode: StatusCode.NoContent };
 export const setupServer = () => {
     const app = express();
+    app.use(cors());
     function wrapHandler(handler) {
         return (request, response) => __awaiter(this, void 0, void 0, function* () {
             const result = yield callHandler(request);
@@ -62,6 +64,7 @@ export const setupServer = () => {
             var _a;
             const responseData = result;
             response.statusCode = (_a = responseData === null || responseData === void 0 ? void 0 : responseData.statusCode) !== null && _a !== void 0 ? _a : StatusCode.OK;
+            response.setHeader('Content-Type', 'application/json');
             response.end(result.content);
         }
     }
