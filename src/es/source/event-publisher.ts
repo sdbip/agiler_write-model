@@ -17,7 +17,7 @@ export class EventPublisher {
       if (currentVersion.equals(domain.EntityVersion.new))
         await insertEntity(entity, db)
 
-      await insertEvent(entity, event, actor, currentVersion.next(), lastPosition + 1, db)
+      await insertEvent(entity, event, actor, currentVersion.next(), lastPosition + 1n, db)
     })
   }
 
@@ -42,7 +42,7 @@ export class EventPublisher {
 
         let version = currentVersion.next()
         for (const event of entity.unpublishedEvents) {
-          await insertEvent(entity.id, event, actor, version, lastPosition + 1, db)
+          await insertEvent(entity.id, event, actor, version, lastPosition + 1n, db)
           version = version.next()
         }
       }
@@ -50,14 +50,14 @@ export class EventPublisher {
   }
 }
 
-async function insertEvent(entity: domain.CanonicalEntityId, event: domain.UnpublishedEvent, actor: string, version: domain.EntityVersion, position: number, db: pg.Client) {
+async function insertEvent(entity: domain.CanonicalEntityId, event: domain.UnpublishedEvent, actor: string, version: domain.EntityVersion, position: bigint, db: pg.Client) {
   await db.query('INSERT INTO "events" (entity_id, entity_type, name, details, actor, version, position) VALUES ($1, $2, $3, $4, $5, $6, $7)',
     [ entity.id, entity.type, event.name, JSON.stringify(event.details), actor, version.value, position ])
 }
 
 async function getLastPosition(db: pg.Client) {
   const positionResult = await db.query('SELECT MAX("position") AS position FROM "events"')
-  return positionResult.rows[0].position as number ?? -1
+  return BigInt(positionResult.rows[0].position ?? -1)
 }
 
 async function getVersion(entity: domain.CanonicalEntityId, db: pg.Client) {

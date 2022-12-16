@@ -32,7 +32,7 @@ export class Item extends source.Entity {
     }
     static new(title, type) {
         const item = new Item(randomUUID(), source.EntityVersion.new);
-        item.addNewEvent(ItemEvent.Created, { title, type: type !== null && type !== void 0 ? type : ItemType.Task });
+        item.addNewEvent(ItemEvent.Created, { title, type: type ?? ItemType.Task });
         return item;
     }
     static reconstitute(id, version, events) {

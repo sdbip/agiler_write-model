@@ -1,12 +1,3 @@
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
@@ -24,27 +15,24 @@ export const setupServer = () => {
     const app = express();
     app.use(cors());
     function wrapHandler(handler) {
-        return (request, response) => __awaiter(this, void 0, void 0, function* () {
-            const result = yield callHandler(request);
+        return async (request, response) => {
+            const result = await callHandler(request);
             outputResult(response, toResponse(result));
-        });
-        function callHandler(request) {
-            return __awaiter(this, void 0, void 0, function* () {
-                try {
-                    return yield handler(request);
-                }
-                catch (thrown) {
-                    const { message } = thrown;
-                    const error = { message };
-                    return {
-                        statusCode: StatusCode.InternalServerError,
-                        content: { error },
-                    };
-                }
-            });
+        };
+        async function callHandler(request) {
+            try {
+                return await handler(request);
+            }
+            catch (thrown) {
+                const { message } = thrown;
+                const error = { message };
+                return {
+                    statusCode: StatusCode.InternalServerError,
+                    content: { error },
+                };
+            }
         }
         function toResponse(result) {
-            var _a;
             if (typeof result === 'string')
                 return {
                     statusCode: StatusCode.OK,
@@ -52,7 +40,7 @@ export const setupServer = () => {
                 };
             const responseData = result;
             return {
-                statusCode: (_a = responseData.statusCode) !== null && _a !== void 0 ? _a : StatusCode.OK,
+                statusCode: responseData.statusCode ?? StatusCode.OK,
                 content: typeof responseData.content === 'string'
                     ? responseData.content
                     : JSON.stringify('content' in responseData
@@ -61,9 +49,8 @@ export const setupServer = () => {
             };
         }
         function outputResult(response, result) {
-            var _a;
             const responseData = result;
-            response.statusCode = (_a = responseData === null || responseData === void 0 ? void 0 : responseData.statusCode) !== null && _a !== void 0 ? _a : StatusCode.OK;
+            response.statusCode = responseData?.statusCode ?? StatusCode.OK;
             response.setHeader('Content-Type', 'application/json');
             response.end(result.content);
         }
