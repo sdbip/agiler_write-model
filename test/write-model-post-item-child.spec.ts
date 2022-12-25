@@ -27,7 +27,7 @@ describe('POST /item/:id/child', () => {
     type: ItemType
   }
 
-  const addChild = async (parentId: string, body: Body) => post(`/item/${parentId}/child`, body)
+  const addChild = async (parentId: string, body: Body) => post(`/item/${parentId}/child`, { authorization: 'system_actor', body })
 
   it('publishes "ChildrenAdded" and "ParentChanged" events', async () => {
     repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [

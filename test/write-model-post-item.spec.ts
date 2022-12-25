@@ -26,7 +26,7 @@ describe('POST /item', () => {
     type?: ItemType
   }
 
-  const addItem = (body: Body) => post('/item', body)
+  const addItem = (body: Body) => post('/item', { authorization: 'system_actor', body })
 
   it('publishes "Created" event', async () => {
     const response = await addItem({

@@ -2,6 +2,7 @@ export enum StatusCode {
   OK = 200,
   Created = 201,
   NoContent = 204,
+  Unauthorized = 401,
   NotFound = 404,
   InternalServerError = 500,
 }
@@ -14,4 +15,5 @@ export interface Response {
 export const ResponseObject: { [_:string]: Response } = {
   NotFound: { statusCode: StatusCode.NotFound },
   NoContent: { statusCode: StatusCode.NoContent },
+  Unauthorized: { statusCode: StatusCode.Unauthorized },
 }

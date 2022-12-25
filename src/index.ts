@@ -11,9 +11,12 @@ let projection = new EventProjection()
 const setup = setupServer()
 
 setup.post('/item', async (request) => {
+  const actor = getAuthenticatedUser(request)
+  if (!actor) return ResponseObject.Unauthorized
+
   const body = await readBody(request)
   const item = Item.new(body.title, body.type)
-  await publishChanges([ item ])
+  await publishChanges([ item ], actor)
   return {
     statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),
@@ -27,6 +30,9 @@ setup.get('/item/:id', async (request) => {
 })
 
 setup.post('/item/:id/child', async (request) => {
+  const actor = getAuthenticatedUser(request)
+  if (!actor) return ResponseObject.Unauthorized
+
   const id = request.params.id as string
   const body = await readBody(request)
 
@@ -37,7 +43,7 @@ setup.post('/item/:id/child', async (request) => {
   const item = Item.new(body.title, body.type)
   parent.add(item)
 
-  await publishChanges([ parent, item ])
+  await publishChanges([ parent, item ], actor)
   return {
     statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),
@@ -45,26 +51,36 @@ setup.post('/item/:id/child', async (request) => {
 })
 
 setup.patch('/item/:id/complete', async (request) => {
+  const actor = getAuthenticatedUser(request)
+  if (!actor) return ResponseObject.Unauthorized
+
   const id = request.params.id as string
   const history = await repository.getHistoryFor(id)
   if (!history || history.type !== Item.TYPE_CODE) return ResponseObject.NotFound
 
   const item = Item.reconstitute(id, history.version, history.events)
   item.complete()
-  await publishChanges([ item ])
+  await publishChanges([ item ], actor)
   return ResponseObject.NoContent
 })
 
 setup.patch('/item/:id/promote', async (request) => {
+  const actor = getAuthenticatedUser(request)
+  if (!actor) return ResponseObject.Unauthorized
+
   const id = request.params.id as string
   const history = await repository.getHistoryFor(id)
   if (!history || history.type !== Item.TYPE_CODE) return ResponseObject.NotFound
 
   const item = Item.reconstitute(id, history.version, history.events)
   item.promote()
-  await publishChanges([ item ])
+  await publishChanges([ item ], actor)
   return ResponseObject.NoContent
 })
+
+function getAuthenticatedUser(request: Request) {
+  return request.header('Authorization')
+}
 
 async function readBody(request: Request): Promise<any> {
   return await new Promise((resolve, reject) => {
@@ -81,8 +97,8 @@ async function readBody(request: Request): Promise<any> {
   })
 }
 
-async function publishChanges(items: Item[]) {
-  await publisher.publishChanges(items, 'system_actor')
+async function publishChanges(items: Item[], actor: string) {
+  await publisher.publishChanges(items, actor)
   await projectUnpublishedEvents(items)
 }
 

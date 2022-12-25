@@ -5,21 +5,22 @@ export function get(path: string) {
   return send({ method: 'GET', path })
 }
 
-export function patch(path: string, body?: Record<string, unknown>) {
-  return send({ method: 'PATCH', path, body })
+export function patch(path: string, { authorization, body }: {authorization: string, body?: Record<string, unknown>}) {
+  return send({ method: 'PATCH', path, body, authorization: authorization })
 }
 
-export function post(path: string, body: Record<string, unknown>) {
-  return send({ method: 'POST', path, body })
+export function post(path: string, { authorization, body }: {authorization: string, body: Record<string, unknown>}) {
+  return send({ method: 'POST', path, body, authorization: authorization })
 }
 
-function send({ method, path, body }: {method: string, path: string, body?: Record<string, unknown>}) {
+function send({ method, path, body, authorization }: {method: string, path: string, body?: Record<string, unknown>, authorization?: string}) {
   const options = {
     hostname: 'localhost',
     port: PORT,
     path,
     method,
     headers: {
+      ...authorization && { 'Authorization': authorization },
       'Content-Type': 'application/json',
       'Content-Length': body ? JSON.stringify(body).length : 0,
     },

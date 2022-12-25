@@ -23,7 +23,7 @@ describe('PATCH /item/:id/complete', () => {
     injectServices({ repository, publisher, projection })
   })
 
-  const complete = (id: string) => patch(`/item/${id}/complete`)
+  const complete = (id: string) => patch(`/item/${id}/complete`, { authorization: 'system_actor' })
 
   it('publishes "ProgressChanged" event when items are completed', async () => {
     repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])

@@ -24,7 +24,7 @@ describe('PATCH /item/:id/promote', () => {
     injectServices({ repository, publisher, projection })
   })
 
-  const promote = (id: string) => patch(`/item/${id}/promote`)
+  const promote = (id: string) => patch(`/item/${id}/promote`, { authorization: 'system_actor' })
 
   it('publishes "TypeChanged" event when items are promoted', async () => {
     repository.nextHistory = new EntityHistory(Item.TYPE_CODE, EntityVersion.of(0), [])
