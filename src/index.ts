@@ -12,8 +12,7 @@ const setup = setupServer()
 setup.post('/item', async (request) => {
   const body = await readBody(request)
   const item = Item.new(body.title, body.type)
-  await publisher.publishChanges(item, 'system_actor')
-  await projectUnpublishedEvents([ item ])
+  await publishChanges([ item ])
   return {
     statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),
@@ -37,8 +36,7 @@ setup.post('/item/:id/child', async (request) => {
   const item = Item.new(body.title, body.type)
   parent.add(item)
 
-  await publisher.publishChanges([ parent, item ], 'system_actor')
-  await projectUnpublishedEvents([ item, parent ])
+  await publishChanges([ parent, item ])
   return {
     statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),
@@ -52,8 +50,7 @@ setup.patch('/item/:id/complete', async (request) => {
 
   const item = Item.reconstitute(id, history.version, history.events)
   item.complete()
-  await publisher.publishChanges(item, 'system_actor')
-  await projectUnpublishedEvents([ item ])
+  await publishChanges([ item ])
   return NO_CONTENT
 })
 
@@ -64,8 +61,7 @@ setup.patch('/item/:id/promote', async (request) => {
 
   const item = Item.reconstitute(id, history.version, history.events)
   item.promote()
-  await publisher.publishChanges(item, 'system_actor')
-  await projectUnpublishedEvents([ item ])
+  await publishChanges([ item ])
   return NO_CONTENT
 })
 
@@ -82,6 +78,11 @@ async function readBody(request: Request): Promise<any> {
       }
     })
   })
+}
+
+async function publishChanges(items: Item[]) {
+  await publisher.publishChanges(items, 'system_actor')
+  await projectUnpublishedEvents(items)
 }
 
 async function projectUnpublishedEvents(entities: Entity[]) {
