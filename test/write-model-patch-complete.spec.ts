@@ -1,11 +1,11 @@
 import { assert } from 'chai'
+import { EntityHistory, EntityVersion } from '../src/es/source.js'
 import { ItemEvent, Progress } from '../src/domain/enums.js'
 import { Item } from '../src/domain/item.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
-import { StatusCode } from '../src/server.js'
+import { StatusCode } from '../src/response.js'
 import * as mocks from './mocks.js'
 import { patch } from './http.js'
-import { EntityHistory, EntityVersion } from '../src/es/source.js'
 
 describe('PATCH /item/:id/complete', () => {
 

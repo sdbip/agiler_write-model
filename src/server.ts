@@ -1,21 +1,10 @@
-import express from 'express'
 import cors from 'cors'
+import express from 'express'
 import { createServer, Server as HTTPServer } from 'http'
-
-export enum StatusCode {
-  OK = 200,
-  Created = 201,
-  NoContent = 204,
-  NotFound = 404,
-  InternalServerError = 500,
-}
+import { Response, StatusCode } from './response.js'
 
 export type Request = express.Request
 export type Handler = (request: Request) => Promise<string | object>
-export interface Response {
-  statusCode?: StatusCode | number
-  content?: string | object
-}
 interface NormalizedResponse {
   statusCode: number
   content: string
@@ -27,9 +16,6 @@ export interface ServerSetup {
   finalize(): Server
   public(root: string): void
 }
-
-export const NOT_FOUND: Response = { statusCode: StatusCode.NotFound }
-export const NO_CONTENT: Response = { statusCode: StatusCode.NoContent }
 
 export const setupServer = (): ServerSetup => {
   const app = express()

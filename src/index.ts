@@ -1,7 +1,8 @@
 import { EventProjection } from './es/event-projection.js'
-import { NOT_FOUND, NO_CONTENT, Request, setupServer, StatusCode } from './server.js'
-import { Item } from './domain/item.js'
 import { Entity, EntityRepository, EventPublisher } from './es/source.js'
+import { Item } from './domain/item.js'
+import { ResponseObject, StatusCode } from './response.js'
+import { Request, setupServer } from './server.js'
 
 let repository = new EntityRepository()
 let publisher = new EventPublisher()
@@ -22,7 +23,7 @@ setup.post('/item', async (request) => {
 setup.get('/item/:id', async (request) => {
   const id = request.params.id as string
   const history = await repository.getHistoryFor(id)
-  return history ?? NOT_FOUND
+  return history ?? ResponseObject.NotFound
 })
 
 setup.post('/item/:id/child', async (request) => {
@@ -30,7 +31,7 @@ setup.post('/item/:id/child', async (request) => {
   const body = await readBody(request)
 
   const history = await repository.getHistoryFor(id)
-  if (!history || history.type !== Item.TYPE_CODE) return NOT_FOUND
+  if (!history || history.type !== Item.TYPE_CODE) return ResponseObject.NotFound
 
   const parent = Item.reconstitute(id, history.version, history.events)
   const item = Item.new(body.title, body.type)
@@ -46,23 +47,23 @@ setup.post('/item/:id/child', async (request) => {
 setup.patch('/item/:id/complete', async (request) => {
   const id = request.params.id as string
   const history = await repository.getHistoryFor(id)
-  if (!history || history.type !== Item.TYPE_CODE) return NOT_FOUND
+  if (!history || history.type !== Item.TYPE_CODE) return ResponseObject.NotFound
 
   const item = Item.reconstitute(id, history.version, history.events)
   item.complete()
   await publishChanges([ item ])
-  return NO_CONTENT
+  return ResponseObject.NoContent
 })
 
 setup.patch('/item/:id/promote', async (request) => {
   const id = request.params.id as string
   const history = await repository.getHistoryFor(id)
-  if (!history || history.type !== Item.TYPE_CODE) return NOT_FOUND
+  if (!history || history.type !== Item.TYPE_CODE) return ResponseObject.NotFound
 
   const item = Item.reconstitute(id, history.version, history.events)
   item.promote()
   await publishChanges([ item ])
-  return NO_CONTENT
+  return ResponseObject.NoContent
 })
 
 async function readBody(request: Request): Promise<any> {
