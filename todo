@@ -1,9 +1,17 @@
+# Features
+- Complete a Story
+- Complete a Feature/Epic
+
 # Stories
 - Assign task to team member (user)
+- Authenticate user securely
 
 # Tasks
+* Expect autorization header that identifies the user (honor system)
+- Use the identified user as actor
+
+# Ice Box
 - README.md
-- Identify user as actor
 - Add inProgress
 - Integration tests between projection and read-model
 - Integration tests between projection and write-model
