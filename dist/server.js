@@ -1,16 +1,7 @@
-import express from 'express';
 import cors from 'cors';
+import express from 'express';
 import { createServer } from 'http';
-export var StatusCode;
-(function (StatusCode) {
-    StatusCode[StatusCode["OK"] = 200] = "OK";
-    StatusCode[StatusCode["Created"] = 201] = "Created";
-    StatusCode[StatusCode["NoContent"] = 204] = "NoContent";
-    StatusCode[StatusCode["NotFound"] = 404] = "NotFound";
-    StatusCode[StatusCode["InternalServerError"] = 500] = "InternalServerError";
-})(StatusCode || (StatusCode = {}));
-export const NOT_FOUND = { statusCode: StatusCode.NotFound };
-export const NO_CONTENT = { statusCode: StatusCode.NoContent };
+import { StatusCode } from './response.js';
 export const setupServer = () => {
     const app = express();
     app.use(cors());
