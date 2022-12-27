@@ -11,6 +11,7 @@ describe('POST /item', () => {
 
   let publisher: MockEventPublisher
   let projection: MockEventProjection
+  let authenticatedUser: string | undefined
 
   before(startServer)
   after(stopServer)
@@ -18,6 +19,7 @@ describe('POST /item', () => {
   beforeEach(() => {
     publisher = new MockEventPublisher()
     projection = new MockEventProjection()
+    authenticatedUser = 'some_user'
     injectServices({ publisher, projection })
   })
 
@@ -26,7 +28,7 @@ describe('POST /item', () => {
     type?: ItemType
   }
 
-  const addItem = (body: Body) => post('/item', { authorization: 'system_actor', body })
+  const addItem = (body: Body) => post('/item', { ... authenticatedUser && { authorization: authenticatedUser }, body })
 
   it('publishes "Created" event', async () => {
     const response = await addItem({
@@ -39,11 +41,23 @@ describe('POST /item', () => {
     assert.equal(publisher.lastPublishedEntities[0]?.version, EntityVersion.new)
     assert.lengthOf(publisher.lastPublishedEvents, 1)
     assert.deepInclude(publisher.lastPublishedEvents[0], {
-      actor: 'system_actor',
       event: {
         name: ItemEvent.Created,
         details: { title: 'Produce some value', type: ItemType.Feature },
       },
+    })
+  })
+
+  it('assigns the authenticated username to the event', async () => {
+    authenticatedUser = 'the_user'
+
+    await addItem({
+      title: 'Produce some value',
+      type: ItemType.Feature,
+    })
+
+    assert.deepInclude(publisher.lastPublishedEvents[0], {
+      actor: 'the_user',
     })
   })
 
@@ -58,5 +72,12 @@ describe('POST /item', () => {
         details: { title: 'Produce some value', type: ItemType.Feature },
       })
     assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
+  })
+
+  it('returns 401 if not authenticated', async () => {
+    authenticatedUser = undefined
+    const response = await addItem({ title: 'Produce some value', type: ItemType.Feature })
+
+    assert.equal(response.statusCode, StatusCode.Unauthorized)
   })
 })

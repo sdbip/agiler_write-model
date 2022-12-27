@@ -7,8 +7,6 @@
 - Authenticate user securely
 
 # Tasks
-* Expect autorization header that identifies the user (honor system)
-- Use the identified user as actor
 
 # Ice Box
 - README.md

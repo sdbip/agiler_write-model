@@ -11,6 +11,7 @@ describe('POST /item/:id/child', () => {
   let publisher: MockEventPublisher
   let projection: MockEventProjection
   let repository: MockEntityRepository
+  let authenticatedUser: string | undefined
 
   before(startServer)
   after(stopServer)
@@ -20,6 +21,7 @@ describe('POST /item/:id/child', () => {
     projection = new MockEventProjection()
     repository = new MockEntityRepository()
     injectServices({ repository, publisher, projection })
+    authenticatedUser = 'some_user'
   })
 
   type Body = {
@@ -27,7 +29,7 @@ describe('POST /item/:id/child', () => {
     type: ItemType
   }
 
-  const addChild = async (parentId: string, body: Body) => post(`/item/${parentId}/child`, { authorization: 'system_actor', body })
+  const addChild = async (parentId: string, body: Body) => post(`/item/${parentId}/child`, { ...{ authorization: authenticatedUser }, body })
 
   it('publishes "ChildrenAdded" and "ParentChanged" events', async () => {
     repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
@@ -43,25 +45,44 @@ describe('POST /item/:id/child', () => {
     const childrenAddedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ChildrenAdded)
     const parentChangedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ParentChanged)
     assert.deepInclude(childrenAddedEvent, {
-      actor: 'system_actor',
       event: {
         name: ItemEvent.ChildrenAdded,
         details: { children: [ JSON.parse(response.content).id ] },
       },
     })
     assert.deepInclude(parentChangedEvent, {
-      actor: 'system_actor',
       event: {
         name: ItemEvent.ParentChanged,
         details: { parent: 'epic_id' },
       },
     })
     assert.deepInclude(createdEvent, {
-      actor: 'system_actor',
       event: {
         name: ItemEvent.Created,
         details: { title: 'Produce some value', type: ItemType.Feature },
       },
+    })
+  })
+
+  it('assigns the authenticated user to the events', async () => {
+    authenticatedUser = 'the_user'
+    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
+      new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
+    ])
+
+    await addChild('epic_id', { title: 'Produce some value', type: ItemType.Feature })
+
+    const createdEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.Created)
+    const childrenAddedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ChildrenAdded)
+    const parentChangedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ParentChanged)
+    assert.deepInclude(childrenAddedEvent, {
+      actor: 'the_user',
+    })
+    assert.deepInclude(parentChangedEvent, {
+      actor: 'the_user',
+    })
+    assert.deepInclude(createdEvent, {
+      actor: 'the_user',
     })
   })
 
@@ -73,6 +94,13 @@ describe('POST /item/:id/child', () => {
     await addChild('story_id', { title: 'Produce some value', type: ItemType.Feature })
 
     assert.lengthOf(projection.lastSyncedEvents, 4)
+  })
+
+  it('returns 401 if not authenticated', async () => {
+    authenticatedUser = undefined
+    const response = await addChild('epic_id', { title: 'Produce some value', type: ItemType.Feature })
+
+    assert.equal(response.statusCode, StatusCode.Unauthorized)
   })
 
   it('returns 404 if parent not found', async () => {

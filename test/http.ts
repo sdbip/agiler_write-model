@@ -5,11 +5,11 @@ export function get(path: string) {
   return send({ method: 'GET', path })
 }
 
-export function patch(path: string, { authorization, body }: {authorization: string, body?: Record<string, unknown>}) {
+export function patch(path: string, { authorization, body }: {authorization?: string, body?: Record<string, unknown>}) {
   return send({ method: 'PATCH', path, body, authorization: authorization })
 }
 
-export function post(path: string, { authorization, body }: {authorization: string, body: Record<string, unknown>}) {
+export function post(path: string, { authorization, body }: {authorization?: string, body: Record<string, unknown>}) {
   return send({ method: 'POST', path, body, authorization: authorization })
 }
 
