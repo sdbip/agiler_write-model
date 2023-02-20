@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { failFast } from '../fail-fast.js'
+import { guard } from '../guard-clauses.js'
 import * as source from '../es/source.js'
 import { ItemEvent, ItemType, Progress } from './enums.js'
 
@@ -18,17 +18,17 @@ export class Item extends source.Entity {
   private parent?: string
 
   promote() {
-    failFast.unless(this.itemType === ItemType.Task, `Only ${ItemType.Task} items may be promoted`)
+    guard.that(this.itemType === ItemType.Task, `Only ${ItemType.Task} items may be promoted`)
 
     this.itemType = ItemType.Story
     this.addNewEvent(ItemEvent.TypeChanged, { type: ItemType.Story })
   }
 
   add(item: Item) {
-    failFast.unless(this.itemType !== ItemType.Task, `${ItemType.Task} items may not have children`)
-    failFast.unless(item.parent === undefined, 'Item must not have other parent')
+    guard.that(this.itemType !== ItemType.Task, `${ItemType.Task} items may not have children`)
+    guard.that(item.parent === undefined, 'Item must not have other parent')
     if (this.itemType === ItemType.Story)
-      failFast.unless(item.itemType === ItemType.Task, `Only ${ItemType.Task} items may be added`)
+      guard.that(item.itemType === ItemType.Task, `Only ${ItemType.Task} items may be added`)
 
     this.addNewEvent(ItemEvent.ChildrenAdded, { children: [ item.id.id ] })
     if (this.itemType === ItemType.Feature)
@@ -46,7 +46,7 @@ export class Item extends source.Entity {
   }
 
   complete() {
-    failFast.unless(this.itemType === ItemType.Task, `Only ${ItemType.Task} items may be completed`)
+    guard.that(this.itemType === ItemType.Task, `Only ${ItemType.Task} items may be completed`)
 
     this.addNewEvent(ItemEvent.ProgressChanged, { progress: Progress.Completed })
   }
