@@ -7,6 +7,12 @@
 - Authenticate user securely
 
 # Tasks
+- Refactor to Event Storming design
+  - Split Item into Feature and Task
+  - How to refactor existing database? Run two in parallel? No, actually, the write-model is in charge of that atm. It should be easier.
+  - Make sure to write tests for the projection
+  - Update the read-model to use two tables?
+- Replace promote with “flag large task”? Or just add a child task to make it a story?
 
 # Ice Box
 - README.md
