@@ -1,4 +1,4 @@
-import { Item } from '../../src/domain/item.js'
+import { Feature } from '../../src/domain/feature.js'
 import { ItemEvent, ItemType } from '../../src/domain/enums.js'
 import { Task } from '../../src/domain/task.js'
 import * as source from '../../src/es/source.js'
@@ -23,7 +23,7 @@ export const reconstituteTaskWithParent = (parentId: string, id: string) =>
   ])
 
 export const reconstituteFeature = (id: string) =>
-  Item.reconstitute(id, source.EntityVersion.new, [
+  Feature.reconstitute(id, source.EntityVersion.new, [
     new  source.PublishedEvent(ItemEvent.Created, { type: ItemType.Feature }),
   ])
 
