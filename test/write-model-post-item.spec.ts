@@ -1,11 +1,11 @@
 import { assert } from 'chai'
 import { EntityVersion } from '../src/es/source.js'
 import { ItemEvent, ItemType } from '../src/domain/enums.js'
-import { Item } from '../src/domain/item.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/response.js'
 import { MockEventProjection, MockEventPublisher } from './mocks.js'
 import { post } from './http.js'
+import { Feature } from '../src/domain/feature.js'
 
 describe('POST /item', () => {
 
@@ -37,7 +37,7 @@ describe('POST /item', () => {
     })
 
     assert.equal(response.statusCode, StatusCode.Created)
-    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Item.TYPE_CODE)
+    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Feature.TYPE_CODE)
     assert.equal(publisher.lastPublishedEntities[0]?.version, EntityVersion.new)
     assert.lengthOf(publisher.lastPublishedEvents, 1)
     assert.deepInclude(publisher.lastPublishedEvents[0], {
@@ -71,7 +71,7 @@ describe('POST /item', () => {
         name: ItemEvent.Created,
         details: { title: 'Produce some value', type: ItemType.Feature },
       })
-    assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
+    assert.equal(projection.lastSyncedEvents[0]?.entity.type, Feature.TYPE_CODE)
   })
 
   it('returns 401 if not authenticated', async () => {

@@ -1,7 +1,7 @@
 import { assert } from 'chai'
 import { EntityHistory, EntityVersion } from '../src/es/source.js'
 import { ItemEvent, ItemType } from '../src/domain/enums.js'
-import { Item } from '../src/domain/item.js'
+import { Task } from '../src/domain/task.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/response.js'
 import { MockEventPublisher, MockEntityRepository, MockEventProjection } from './mocks.js'
@@ -29,7 +29,7 @@ describe('PATCH /item/:id/promote', () => {
   const promote = (id: string) => patch(`/item/${id}/promote`, { ...{ authorization: authenticatedUser } })
 
   it('publishes "TypeChanged" event when items are promoted', async () => {
-    repository.nextHistory = new EntityHistory(Item.TYPE_CODE, EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
     const response = await promote('id')
 
     assert.equal(response.statusCode, StatusCode.NoContent)
@@ -43,11 +43,11 @@ describe('PATCH /item/:id/promote', () => {
           details: { type: ItemType.Story },
         },
       })
-    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Item.TYPE_CODE)
+    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Task.TYPE_CODE)
   })
 
   it('assigns the authenticated username to the event', async () => {
-    repository.nextHistory = new EntityHistory(Item.TYPE_CODE, EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
     authenticatedUser = 'the_user'
     await promote('id')
 
@@ -59,7 +59,7 @@ describe('PATCH /item/:id/promote', () => {
   })
 
   it('projects "Created" event', async () => {
-    repository.nextHistory = new EntityHistory(Item.TYPE_CODE, EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
     await promote('id')
 
     assert.lengthOf(projection.lastSyncedEvents, 1)
@@ -69,7 +69,7 @@ describe('PATCH /item/:id/promote', () => {
         name: ItemEvent.TypeChanged,
         details: { type: ItemType.Story },
       })
-    assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
+    assert.equal(projection.lastSyncedEvents[0]?.entity.type, Task.TYPE_CODE)
   })
 
   it('returns 401 if not authenticated', async () => {

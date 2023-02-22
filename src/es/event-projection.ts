@@ -3,7 +3,6 @@ import { promises as fs } from 'fs'
 import { DATABASE_CONNECTION_STRING } from '../config.js'
 import { CanonicalEntityId } from './source.js'
 import { ItemEvent, Progress } from '../domain/enums.js'
-import { Item } from '../domain/item.js'
 
 export type Event = {
   entity: CanonicalEntityId,
@@ -20,7 +19,7 @@ export class EventProjection {
     await db.query(schema.toString('utf-8'))
 
     try {
-      for (const event of events.filter(e => e.entity.type === Item.TYPE_CODE)) {
+      for (const event of events.filter(e => e.entity.type === 'Item')) {
         switch (event.name) {
           case ItemEvent.Created:
             await this.onCreated(event, db)

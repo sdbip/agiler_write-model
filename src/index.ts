@@ -1,10 +1,10 @@
 import { EventProjection } from './es/event-projection.js'
 import { Entity, EntityRepository, EventPublisher } from './es/source.js'
-import { Item } from './domain/item.js'
 import { ResponseObject, StatusCode } from './response.js'
 import { Request, setupServer } from './server.js'
 import { Feature } from './domain/feature.js'
 import { Task } from './domain/task.js'
+import { ItemEvent, ItemType } from './domain/enums.js'
 
 let repository = new EntityRepository()
 let publisher = new EventPublisher()
@@ -17,11 +17,32 @@ setup.post('/item', async (request) => {
   if (!actor) return ResponseObject.Unauthorized
 
   const body = await readBody(request)
-  const item = Item.new(body.title, body.type)
-  await publishChanges([ item ], actor)
-  return {
-    statusCode: StatusCode.Created,
-    content: JSON.stringify(item.id),
+  switch (body.type) {
+    case ItemType.Epic:
+    case ItemType.Feature:
+    {
+      const item = Feature.new(body.title, body.type)
+      await publishChanges([ item ], actor)
+      return {
+        statusCode: StatusCode.Created,
+        content: JSON.stringify(item.id),
+      }
+    }
+    case ItemType.Story:
+    case ItemType.Task:
+    {
+      const item = Task.new(body.title, body.type)
+      await publishChanges([ item ], actor)
+      return {
+        statusCode: StatusCode.Created,
+        content: JSON.stringify(item.id),
+      }
+    }
+    default:
+      return {
+        statusCode: StatusCode.InternalServerError,
+        content: 'This case is not supported',
+      }
   }
 })
 
@@ -65,16 +86,44 @@ setup.post('/item/:id/child', async (request) => {
   const body = await readBody(request)
 
   const history = await repository.getHistoryFor(id)
-  if (!history || history.type !== Item.TYPE_CODE) return ResponseObject.NotFound
 
-  const parent = Item.reconstitute(id, history.version, history.events)
-  const item = Item.new(body.title, body.type)
-  parent.add(item)
+  if (!history || history.type !== 'Item') return ResponseObject.NotFound
 
-  await publishChanges([ parent, item ], actor)
-  return {
-    statusCode: StatusCode.Created,
-    content: JSON.stringify(item.id),
+  const typeDefiningEvents = history.events.filter(e => e.name === ItemEvent.TypeChanged || e.name === ItemEvent.Created)
+  const lastTypeDefiningEvent = typeDefiningEvents[typeDefiningEvents.length - 1]
+
+  switch (lastTypeDefiningEvent.details.type) {
+    case ItemType.Feature:
+    case ItemType.Epic:
+    {
+      const parent = Feature.reconstitute(id, history.version, history.events)
+      const child = Feature.new(body.title, body.type)
+      parent.add(child)
+
+      await publishChanges([ parent, child ], actor)
+      return {
+        statusCode: StatusCode.Created,
+        content: JSON.stringify(child.id),
+      }
+    }
+    case ItemType.Story:
+    case ItemType.Task:
+    {
+      const parent = Task.reconstitute(id, history.version, history.events)
+      const child = Task.new(body.title, body.type)
+      parent.add(child)
+
+      await publishChanges([ parent, child ], actor)
+      return {
+        statusCode: StatusCode.Created,
+        content: JSON.stringify(child.id),
+      }
+    }
+    default:
+      return {
+        statusCode: StatusCode.InternalServerError,
+        content: 'This case is not supported',
+      }
   }
 })
 
@@ -126,10 +175,10 @@ setup.patch('/item/:id/complete', async (request) => {
 
   const id = request.params.id as string
   const history = await repository.getHistoryFor(id)
-  if (!history || history.type !== Item.TYPE_CODE) return ResponseObject.NotFound
+  if (!history || history.type !== Task.TYPE_CODE) return ResponseObject.NotFound
 
-  const item = Item.reconstitute(id, history.version, history.events)
-  item.complete()
+  const item = Task.reconstitute(id, history.version, history.events)
+  item.finish()
   await publishChanges([ item ], actor)
   return ResponseObject.NoContent
 })
@@ -140,7 +189,7 @@ setup.patch('/task/:id/finish', async (request) => {
 
   const id = request.params.id as string
   const history = await repository.getHistoryFor(id)
-  if (!history || history.type !== Item.TYPE_CODE) return ResponseObject.NotFound
+  if (!history || history.type !== Task.TYPE_CODE) return ResponseObject.NotFound
 
   const task = Task.reconstitute(id, history.version, history.events)
   task.finish()
@@ -154,9 +203,9 @@ setup.patch('/item/:id/promote', async (request) => {
 
   const id = request.params.id as string
   const history = await repository.getHistoryFor(id)
-  if (!history || history.type !== Item.TYPE_CODE) return ResponseObject.NotFound
+  if (!history || history.type !== Task.TYPE_CODE) return ResponseObject.NotFound
 
-  const item = Item.reconstitute(id, history.version, history.events)
+  const item = Task.reconstitute(id, history.version, history.events)
   item.promote()
   await publishChanges([ item ], actor)
   return ResponseObject.NoContent

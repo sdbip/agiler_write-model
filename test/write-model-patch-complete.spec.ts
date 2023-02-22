@@ -1,7 +1,7 @@
 import { assert } from 'chai'
 import { EntityHistory, EntityVersion } from '../src/es/source.js'
 import { ItemEvent, Progress } from '../src/domain/enums.js'
-import { Item } from '../src/domain/item.js'
+import { Task } from '../src/domain/task.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/response.js'
 import * as mocks from './mocks.js'
@@ -28,7 +28,7 @@ describe('PATCH /item/:id/complete', () => {
   const complete = (id: string) => patch(`/item/${id}/complete`, { ...authenticatedUser && { authorization: authenticatedUser } })
 
   it('publishes "ProgressChanged" event when items are completed', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
     const response = await complete('id')
 
     assert.equal(response.statusCode, StatusCode.NoContent)
@@ -44,11 +44,11 @@ describe('PATCH /item/:id/complete', () => {
       })
     assert.exists(publisher.lastPublishedEntities)
     assert.lengthOf(publisher.lastPublishedEntities, 1)
-    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Item.TYPE_CODE)
+    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Task.TYPE_CODE)
   })
 
   it('sets the actor to the authenticated user', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
     authenticatedUser = 'the_user'
     const response = await complete('id')
 
@@ -66,11 +66,11 @@ describe('PATCH /item/:id/complete', () => {
       })
     assert.exists(publisher.lastPublishedEntities)
     assert.lengthOf(publisher.lastPublishedEntities, 1)
-    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Item.TYPE_CODE)
+    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Task.TYPE_CODE)
   })
 
   it('projects "Completed" event', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
     await complete('id')
 
     assert.lengthOf(projection.lastSyncedEvents, 1)
@@ -80,7 +80,7 @@ describe('PATCH /item/:id/complete', () => {
         name: ItemEvent.ProgressChanged,
         details: { progress: Progress.Completed },
       })
-    assert.equal(projection.lastSyncedEvents[0]?.entity.type, Item.TYPE_CODE)
+    assert.equal(projection.lastSyncedEvents[0]?.entity.type, Task.TYPE_CODE)
   })
 
   it('returns 401 if not authenticated', async () => {
