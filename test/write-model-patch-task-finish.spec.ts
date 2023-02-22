@@ -28,7 +28,7 @@ describe('PATCH /task/:id/finish', () => {
   const finish = (id: string) => patch(`/task/${id}/finish`, { ...authenticatedUser && { authorization: authenticatedUser } })
 
   it('publishes "ProgressChanged" event when tasks are finished', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
     const response = await finish('id')
 
     assert.equal(response.statusCode, StatusCode.NoContent)
@@ -48,7 +48,7 @@ describe('PATCH /task/:id/finish', () => {
   })
 
   it('sets the actor to the authenticated user', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
     authenticatedUser = 'the_user'
     const response = await finish('id')
 
@@ -70,7 +70,7 @@ describe('PATCH /task/:id/finish', () => {
   })
 
   it('projects "Completed" event', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
     await finish('id')
 
     assert.lengthOf(projection.lastSyncedEvents, 1)
@@ -96,8 +96,8 @@ describe('PATCH /task/:id/finish', () => {
     assert.equal(response.statusCode, StatusCode.NotFound)
   })
 
-  it('returns 404 if not an Item', async () => {
-    repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
+  it('returns 404 if not a Task', async () => {
+    repository.nextHistory = new EntityHistory('Unexpected TYPE CODE', EntityVersion.of(0), [])
     const response = await finish('id')
 
     assert.equal(response.statusCode, StatusCode.NotFound)

@@ -74,7 +74,7 @@ describe('POST /task', () => {
 
   it('returns 401 if not authenticated', async () => {
     authenticatedUser = undefined
-    const response = await addTask({ title: 'Produce some value', type: ItemType.Feature })
+    const response = await addTask({ title: 'Produce some value', type: ItemType.Task })
 
     assert.equal(response.statusCode, StatusCode.Unauthorized)
   })

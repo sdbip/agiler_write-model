@@ -97,7 +97,7 @@ describe('PATCH /item/:id/complete', () => {
   })
 
   it('returns 404 if not an Item', async () => {
-    repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory('Unexpected TYPE CODE', EntityVersion.of(0), [])
     const response = await complete('id')
 
     assert.equal(response.statusCode, StatusCode.NotFound)

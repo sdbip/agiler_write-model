@@ -91,7 +91,7 @@ describe('POST /task/:id/child', () => {
   })
 
   it('projects events', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [
       new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Story }),
     ])
 
@@ -114,7 +114,7 @@ describe('POST /task/:id/child', () => {
   })
 
   it('returns 404 if parent is not an Item', async () => {
-    repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory('Unexpected TYPE CODE', EntityVersion.of(0), [])
     const response = await addChild('parent_id', { title: 'Produce some value', type: ItemType.Task })
     assert.equal(response.statusCode, StatusCode.NotFound)
   })

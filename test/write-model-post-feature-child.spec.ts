@@ -122,7 +122,7 @@ describe('POST /feature/:id/child', () => {
   })
 
   it('returns 404 if parent is not an Item', async () => {
-    repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
+    repository.nextHistory = new EntityHistory('Unexpected TYPE CODE', EntityVersion.of(0), [])
     const response = await addChild('parent_id', { title: 'Produce some value', type: ItemType.Feature })
     assert.equal(response.statusCode, StatusCode.NotFound)
   })

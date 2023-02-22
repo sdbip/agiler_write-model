@@ -12,7 +12,7 @@ type AddEvent =
 & ((this: Task, event: ItemEvent.ProgressChanged, details: { progress: Progress }) => void)
 
 export class Task extends source.Entity {
-  static readonly TYPE_CODE = 'Item'
+  static readonly TYPE_CODE = 'Task'
 
   private itemType = ItemType.Task
   private parent?: string

@@ -1,9 +1,10 @@
 import { assert } from 'chai'
 import pg from 'pg'
-import { DATABASE_CONNECTION_STRING } from '../../src/config.js'
-import { ItemEvent, ItemType, Progress } from '../../src/domain/enums.js'
-import { EventProjection } from '../../src/es/event-projection.js'
-import { CanonicalEntityId } from '../../src/es/source.js'
+import { DATABASE_CONNECTION_STRING } from '../../../src/config.js'
+import { ItemEvent, ItemType, Progress } from '../../../src/domain/enums.js'
+import { Task } from '../../../src/domain/task.js'
+import { EventProjection } from '../../../src/es/event-projection.js'
+import { CanonicalEntityId } from '../../../src/es/source.js'
 
 describe(EventProjection.name, () => {
 
@@ -46,7 +47,7 @@ describe(EventProjection.name, () => {
       await projection.sync([
         {
           name: ItemEvent.Created,
-          entity: new CanonicalEntityId('id', 'Item'),
+          entity: new CanonicalEntityId('id', Task.TYPE_CODE),
           details: { title: 'Title', type: ItemType.Task },
         },
       ])
@@ -66,7 +67,7 @@ describe(EventProjection.name, () => {
       await projection.sync([
         {
           name: ItemEvent.Created,
-          entity: new CanonicalEntityId('id', 'NotItem'),
+          entity: new CanonicalEntityId('id', 'Unexpected TYPE CODE'),
           details: { title: 'Title', type: ItemType.Task },
         },
       ])
@@ -95,7 +96,7 @@ describe(EventProjection.name, () => {
       await projection.sync([
         {
           name: ItemEvent.ParentChanged,
-          entity: new CanonicalEntityId('id', 'Item'),
+          entity: new CanonicalEntityId('id', Task.TYPE_CODE),
           details: { parent: 'new_parent_id' },
         },
       ])
@@ -112,7 +113,7 @@ describe(EventProjection.name, () => {
       await projection.sync([
         {
           name: ItemEvent.ParentChanged,
-          entity: new CanonicalEntityId('id', 'NotItem'),
+          entity: new CanonicalEntityId('id', 'Unexpected TYPE CODE'),
           details: { parent: 'parent_id' },
         },
       ])
@@ -143,7 +144,7 @@ describe(EventProjection.name, () => {
       await projection.sync([
         {
           name: ItemEvent.ProgressChanged,
-          entity: new CanonicalEntityId('id', 'Item'),
+          entity: new CanonicalEntityId('id', Task.TYPE_CODE),
           details: { progress: Progress.Completed },
         },
       ])
@@ -160,7 +161,7 @@ describe(EventProjection.name, () => {
       await projection.sync([
         {
           name: ItemEvent.ProgressChanged,
-          entity: new CanonicalEntityId('id', 'NotItem'),
+          entity: new CanonicalEntityId('id', 'Unexpected TYPE CODE'),
           details: { progress: Progress.Completed },
         },
       ])
@@ -189,7 +190,7 @@ describe(EventProjection.name, () => {
       await projection.sync([
         {
           name: ItemEvent.TypeChanged,
-          entity: new CanonicalEntityId('id', 'Item'),
+          entity: new CanonicalEntityId('id', Task.TYPE_CODE),
           details: { type: ItemType.Story },
         },
       ])
@@ -206,7 +207,7 @@ describe(EventProjection.name, () => {
       await projection.sync([
         {
           name: ItemEvent.TypeChanged,
-          entity: new CanonicalEntityId('id', 'NotItem'),
+          entity: new CanonicalEntityId('id', 'Unexpected TYPE CODE'),
           details: { type: ItemType.Story },
         },
       ])
