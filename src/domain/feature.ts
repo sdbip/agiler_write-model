@@ -12,7 +12,7 @@ type AddEvent =
 & ((this: Feature, event: ItemEvent.ProgressChanged, details: { progress: Progress }) => void)
 
 export class Feature extends source.Entity {
-  static readonly TYPE_CODE = 'Feature'
+  static readonly TYPE_CODE = 'Item'
 
   private itemType = ItemType.Feature
   private parent?: string

@@ -5,8 +5,9 @@ import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/response.js'
 import { MockEntityRepository, MockEventProjection, MockEventPublisher } from './mocks.js'
 import { post } from './http.js'
+import { Feature } from '../src/domain/feature.js'
 
-describe('POST /item/:id/child', () => {
+describe('POST /feature/:id/child', () => {
 
   let publisher: MockEventPublisher
   let projection: MockEventProjection
@@ -29,17 +30,17 @@ describe('POST /item/:id/child', () => {
     type: ItemType
   }
 
-  const addChild = async (parentId: string, body: Body) => post(`/item/${parentId}/child`, { ...{ authorization: authenticatedUser }, body })
+  const addChild = async (parentId: string, body: Body) => post(`/feature/${parentId}/child`, { ...{ authorization: authenticatedUser }, body })
 
   it('publishes "ChildrenAdded" and "ParentChanged" events', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
+    repository.nextHistory = new EntityHistory(Feature.TYPE_CODE, EntityVersion.of(0), [
       new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
     ])
 
-    const response = await addChild('epic_id', { title: 'Produce some value', type: ItemType.Feature })
+    const response = await addChild('parent_id', { title: 'Produce some value', type: ItemType.Feature })
 
     assert.equal(response.statusCode, StatusCode.Created)
-    assert.equal(repository.lastRequestedId, 'epic_id')
+    assert.equal(repository.lastRequestedId, 'parent_id')
 
     const createdEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.Created)
     const childrenAddedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ChildrenAdded)
@@ -54,7 +55,7 @@ describe('POST /item/:id/child', () => {
     assert.deepInclude(parentChangedEvent, {
       event: {
         name: ItemEvent.ParentChanged,
-        details: { parent: 'epic_id' },
+        details: { parent: 'parent_id' },
       },
     })
     assert.deepInclude(createdEvent, {
@@ -73,11 +74,11 @@ describe('POST /item/:id/child', () => {
 
   it('assigns the authenticated user to the events', async () => {
     authenticatedUser = 'the_user'
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
+    repository.nextHistory = new EntityHistory(Feature.TYPE_CODE, EntityVersion.of(0), [
       new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
     ])
 
-    await addChild('epic_id', { title: 'Produce some value', type: ItemType.Feature })
+    await addChild('parent_id', { title: 'Produce some value', type: ItemType.Feature })
 
     const createdEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.Created)
     const childrenAddedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ChildrenAdded)
@@ -98,31 +99,31 @@ describe('POST /item/:id/child', () => {
   })
 
   it('projects events', async () => {
-    repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
+    repository.nextHistory = new EntityHistory(Feature.TYPE_CODE, EntityVersion.of(0), [
       new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
     ])
 
-    await addChild('story_id', { title: 'Produce some value', type: ItemType.Feature })
+    await addChild('parent_id', { title: 'Produce some value', type: ItemType.Feature })
 
     assert.lengthOf(projection.lastSyncedEvents, 4)
   })
 
   it('returns 401 if not authenticated', async () => {
     authenticatedUser = undefined
-    const response = await addChild('epic_id', { title: 'Produce some value', type: ItemType.Feature })
+    const response = await addChild('parent_id', { title: 'Produce some value', type: ItemType.Feature })
 
     assert.equal(response.statusCode, StatusCode.Unauthorized)
   })
 
   it('returns 404 if parent not found', async () => {
-    const response = await addChild('epic_id', { title: 'Produce some value', type: ItemType.Feature })
+    const response = await addChild('parent_id', { title: 'Produce some value', type: ItemType.Feature })
 
     assert.equal(response.statusCode, StatusCode.NotFound)
   })
 
   it('returns 404 if parent is not an Item', async () => {
     repository.nextHistory = new EntityHistory('NotItem', EntityVersion.of(0), [])
-    const response = await addChild('epic_id', { title: 'Produce some value', type: ItemType.Feature })
+    const response = await addChild('parent_id', { title: 'Produce some value', type: ItemType.Feature })
     assert.equal(response.statusCode, StatusCode.NotFound)
   })
 })

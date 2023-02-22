@@ -3,6 +3,8 @@ import { Entity, EntityRepository, EventPublisher } from './es/source.js'
 import { Item } from './domain/item.js'
 import { ResponseObject, StatusCode } from './response.js'
 import { Request, setupServer } from './server.js'
+import { Feature } from './domain/feature.js'
+import { Task } from './domain/task.js'
 
 let repository = new EntityRepository()
 let publisher = new EventPublisher()
@@ -20,6 +22,32 @@ setup.post('/item', async (request) => {
   return {
     statusCode: StatusCode.Created,
     content: JSON.stringify(item.id),
+  }
+})
+
+setup.post('/feature', async (request) => {
+  const actor = getAuthenticatedUser(request)
+  if (!actor) return ResponseObject.Unauthorized
+
+  const body = await readBody(request)
+  const feature = Feature.new(body.title)
+  await publishChanges([ feature ], actor)
+  return {
+    statusCode: StatusCode.Created,
+    content: JSON.stringify(feature.id),
+  }
+})
+
+setup.post('/task', async (request) => {
+  const actor = getAuthenticatedUser(request)
+  if (!actor) return ResponseObject.Unauthorized
+
+  const body = await readBody(request)
+  const task = Task.new(body.title)
+  await publishChanges([ task ], actor)
+  return {
+    statusCode: StatusCode.Created,
+    content: JSON.stringify(task.id),
   }
 })
 
@@ -50,6 +78,48 @@ setup.post('/item/:id/child', async (request) => {
   }
 })
 
+setup.post('/feature/:id/child', async (request) => {
+  const actor = getAuthenticatedUser(request)
+  if (!actor) return ResponseObject.Unauthorized
+
+  const id = request.params.id as string
+  const body = await readBody(request)
+
+  const history = await repository.getHistoryFor(id)
+  if (!history || history.type !== Feature.TYPE_CODE) return ResponseObject.NotFound
+
+  const parent = Feature.reconstitute(id, history.version, history.events)
+  const feature = Feature.new(body.title, body.type)
+  parent.add(feature)
+
+  await publishChanges([ parent, feature ], actor)
+  return {
+    statusCode: StatusCode.Created,
+    content: JSON.stringify(feature.id),
+  }
+})
+
+setup.post('/task/:id/child', async (request) => {
+  const actor = getAuthenticatedUser(request)
+  if (!actor) return ResponseObject.Unauthorized
+
+  const id = request.params.id as string
+  const body = await readBody(request)
+
+  const history = await repository.getHistoryFor(id)
+  if (!history || history.type !== Task.TYPE_CODE) return ResponseObject.NotFound
+
+  const parent = Task.reconstitute(id, history.version, history.events)
+  const task = Task.new(body.title, body.type)
+  parent.add(task)
+
+  await publishChanges([ parent, task ], actor)
+  return {
+    statusCode: StatusCode.Created,
+    content: JSON.stringify(task.id),
+  }
+})
+
 setup.patch('/item/:id/complete', async (request) => {
   const actor = getAuthenticatedUser(request)
   if (!actor) return ResponseObject.Unauthorized
@@ -64,6 +134,20 @@ setup.patch('/item/:id/complete', async (request) => {
   return ResponseObject.NoContent
 })
 
+setup.patch('/task/:id/finish', async (request) => {
+  const actor = getAuthenticatedUser(request)
+  if (!actor) return ResponseObject.Unauthorized
+
+  const id = request.params.id as string
+  const history = await repository.getHistoryFor(id)
+  if (!history || history.type !== Item.TYPE_CODE) return ResponseObject.NotFound
+
+  const task = Task.reconstitute(id, history.version, history.events)
+  task.finish()
+  await publishChanges([ task ], actor)
+  return ResponseObject.NoContent
+})
+
 setup.patch('/item/:id/promote', async (request) => {
   const actor = getAuthenticatedUser(request)
   if (!actor) return ResponseObject.Unauthorized
@@ -75,6 +159,20 @@ setup.patch('/item/:id/promote', async (request) => {
   const item = Item.reconstitute(id, history.version, history.events)
   item.promote()
   await publishChanges([ item ], actor)
+  return ResponseObject.NoContent
+})
+
+setup.patch('/task/:id/promote', async (request) => {
+  const actor = getAuthenticatedUser(request)
+  if (!actor) return ResponseObject.Unauthorized
+
+  const id = request.params.id as string
+  const history = await repository.getHistoryFor(id)
+  if (!history || history.type !== Task.TYPE_CODE) return ResponseObject.NotFound
+
+  const task = Task.reconstitute(id, history.version, history.events)
+  task.promote()
+  await publishChanges([ task ], actor)
   return ResponseObject.NoContent
 })
 
@@ -97,7 +195,7 @@ async function readBody(request: Request): Promise<any> {
   })
 }
 
-async function publishChanges(items: Item[], actor: string) {
+async function publishChanges(items: Entity[], actor: string) {
   await publisher.publishChanges(items, actor)
   await projectUnpublishedEvents(items)
 }
