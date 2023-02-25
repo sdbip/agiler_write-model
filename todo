@@ -8,8 +8,6 @@
 
 # Tasks
 * Refactor to Event Storming design
-  * Migrate Elephant database from using 'Item' to using 'Task' and 'Feature' as TYPE_CODE
-    * Maybe add some 'Item' events to localhost first and see that they convert correctly?
   - Update the read-model to use two tables?
 - Replace promote with “flag large task”? Or just add a child task to make it a story?
 
