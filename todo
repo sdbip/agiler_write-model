@@ -9,6 +9,18 @@
 # Tasks
 * Refactor to Event Storming design
   - Update the read-model to use two tables?
+  - Update the language for `Feature` entities
+    - static identifyNeed() => FeatureIdentified
+    - split() => FeatureIdentified
+    - implement() => FeatureImplemented
+    - `isEpic` flag?
+  - Update the language for `Task` entities
+    - static identifyTask() => TaskIdentified
+    - split() => TaskIdentified
+    - accept() => TaskAssigned
+    - finish() => TaskFinished
+    - `needsSplitting` flag?
+- Add `Idea` entity
 - Replace promote with “flag large task”? Or just add a child task to make it a story?
 
 # Ice Box
