@@ -18,6 +18,7 @@ export class EventPublisher {
         await insertEntity(entity, db)
 
       await insertEvent(entity, event, actor, currentVersion.next(), lastPosition + 1n, db)
+      await updateVersion(entity, currentVersion.next(), db)
     })
   }
 
@@ -45,6 +46,8 @@ export class EventPublisher {
           await insertEvent(entity.id, event, actor, version, lastPosition + 1n, db)
           version = version.next()
         }
+
+        await updateVersion(entity.id, currentVersion.next(), db)
       }
     })
   }
@@ -65,6 +68,11 @@ async function getVersion(entity: domain.CanonicalEntityId, db: pg.Client) {
   return result.rowCount === 0
     ? domain.EntityVersion.new
     : domain.EntityVersion.of(result.rows[0].version)
+}
+
+async function updateVersion(entity: domain.CanonicalEntityId, version: domain.EntityVersion, db: pg.Client) {
+  await db.query('UPDATE "entities" SET version = $2 WHERE id = $1',
+    [ entity.id, version.value ])
 }
 
 async function insertEntity(entity: domain.CanonicalEntityId, db: pg.Client) {
