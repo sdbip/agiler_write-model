@@ -69,14 +69,25 @@ describe(source.EventPublisher.name, () => {
     })
 
     it('assigns positioning information to events', async () => {
-      const entity = new source.CanonicalEntityId('entity', 'type')
-      await publisher.publish(new source.UnpublishedEvent('event1', {}), entity, 'test-system')
-      await publisher.publish(new source.UnpublishedEvent('event2', {}), entity, 'test-system')
+      const id = new source.CanonicalEntityId('entity', 'type')
+      await publisher.publishChanges({
+        id,
+        version: source.EntityVersion.new,
+        unpublishedEvents: [
+          new source.UnpublishedEvent('event1', {}),
+          new source.UnpublishedEvent('event2', {}),
+        ],
+      }, 'test.system')
+      await publisher.publish(new source.UnpublishedEvent('event3', {}), id, 'test-system')
 
       const rs = await db.query('SELECT * FROM "events" ORDER BY "version"')
-      assert.lengthOf(rs.rows, 2)
-      assert.equal(rs.rows[1].version, 1)
-      assert.equal(rs.rows[1].position, 1)
+      assert.lengthOf(rs.rows, 3)
+      assert.equal(rs.rows[0].version, 0, `${rs.rows[0].name} version`)
+      assert.equal(rs.rows[0].position, 0, `${rs.rows[0].name} position`)
+      assert.equal(rs.rows[1].version, 1, `${rs.rows[1].name} version`)
+      assert.equal(rs.rows[1].position, 0, `${rs.rows[1].name} position`)
+      assert.equal(rs.rows[2].version, 2, `${rs.rows[2].name} version`)
+      assert.equal(rs.rows[2].position, 1, `${rs.rows[2].name} position`)
     })
 
     it('updates the version number of the entity', async () => {
@@ -214,6 +225,37 @@ describe(source.EventPublisher.name, () => {
 
       const rs = await db.query('SELECT * FROM "entities"')
       assert.deepInclude(rs.rows[0], { version: 1 })
+    })
+
+    it('assigns positioning information to events', async () => {
+      const id = new source.CanonicalEntityId('entity', 'type')
+      await publisher.publishChanges({
+        id,
+        version: source.EntityVersion.new,
+        unpublishedEvents: [
+          new source.UnpublishedEvent('event1', {}),
+          new source.UnpublishedEvent('event2', {}),
+        ],
+      }, 'test.system')
+      await publisher.publishChanges({
+        id,
+        version: source.EntityVersion.of(0),
+        unpublishedEvents: [
+          new source.UnpublishedEvent('event3', {}),
+          new source.UnpublishedEvent('event4', {}),
+        ],
+      }, 'test.system')
+
+      const rs = await db.query('SELECT * FROM "events" ORDER BY "version"')
+      assert.lengthOf(rs.rows, 4)
+      assert.equal(rs.rows[0].version, 0, `${rs.rows[0].name} version`)
+      assert.equal(rs.rows[0].position, 0, `${rs.rows[0].name} position`)
+      assert.equal(rs.rows[1].version, 1, `${rs.rows[1].name} version`)
+      assert.equal(rs.rows[1].position, 0, `${rs.rows[1].name} position`)
+      assert.equal(rs.rows[2].version, 2, `${rs.rows[2].name} version`)
+      assert.equal(rs.rows[2].position, 1, `${rs.rows[2].name} position`)
+      assert.equal(rs.rows[3].version, 3, `${rs.rows[3].name} version`)
+      assert.equal(rs.rows[3].position, 1, `${rs.rows[3].name} position`)
     })
   })
 

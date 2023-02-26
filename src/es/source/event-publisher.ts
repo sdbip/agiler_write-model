@@ -12,12 +12,13 @@ export class EventPublisher {
 
     await transaction(db, async db => {
       const currentVersion = await getVersion(entity, db)
+      const maxVersion = await getLastEventVersion(entity, db)
       const lastPosition = await getLastPosition(db)
 
       if (currentVersion.equals(domain.EntityVersion.new))
         await insertEntity(entity, db)
 
-      await insertEvent(entity, event, actor, currentVersion.next(), lastPosition + 1n, db)
+      await insertEvent(entity, event, actor, maxVersion.next(), lastPosition + 1n, db) // maxVersion.next()
       await updateVersion(entity, currentVersion.next(), db)
     })
   }
@@ -34,6 +35,7 @@ export class EventPublisher {
 
       for (const entity of entities) {
         const currentVersion = await getVersion(entity.id, db)
+        const maxVersion = await getLastEventVersion(entity.id, db)
 
         if (!entity.version.equals(currentVersion))
           throw new Error(`Concurrent update of entity ${entity.id}`)
@@ -41,7 +43,7 @@ export class EventPublisher {
         if (currentVersion.equals(domain.EntityVersion.new))
           await insertEntity(entity.id, db)
 
-        let version = currentVersion.next()
+        let version = maxVersion.next()
         for (const event of entity.unpublishedEvents) {
           await insertEvent(entity.id, event, actor, version, lastPosition + 1n, db)
           version = version.next()
@@ -66,6 +68,13 @@ async function getLastPosition(db: pg.Client) {
 async function getVersion(entity: domain.CanonicalEntityId, db: pg.Client) {
   const result = await db.query('SELECT "version" FROM "entities" WHERE id = $1', [ entity.id ])
   return result.rowCount === 0
+    ? domain.EntityVersion.new
+    : domain.EntityVersion.of(result.rows[0].version)
+}
+
+async function getLastEventVersion(entity: domain.CanonicalEntityId, db: pg.Client) {
+  const result = await db.query('SELECT MAX("version") AS version FROM "events" WHERE entity_id = $1', [ entity.id ])
+  return result.rows[0].version === null
     ? domain.EntityVersion.new
     : domain.EntityVersion.of(result.rows[0].version)
 }
