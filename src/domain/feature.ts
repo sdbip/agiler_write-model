@@ -48,6 +48,7 @@ export class Feature extends source.Entity {
       switch (event.name) {
         case ItemEvent.Created:
         case ItemEvent.TypeChanged:
+          guard.isIn([ ItemType.Epic, ItemType.Feature ])(event.details.type)
           feature.itemType = event.details.type
           break
         case ItemEvent.ParentChanged:

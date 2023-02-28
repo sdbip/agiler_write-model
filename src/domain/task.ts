@@ -60,6 +60,7 @@ export class Task extends source.Entity {
       switch (event.name) {
         case ItemEvent.Created:
         case ItemEvent.TypeChanged:
+          guard.isIn([ ItemType.Story, ItemType.Task ])(event.details.type)
           item.itemType = event.details.type
           break
         case ItemEvent.ParentChanged:
