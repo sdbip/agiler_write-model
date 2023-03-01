@@ -8,7 +8,7 @@ describe('Task.remove', () => {
     const taskId = 'task_id'
     const storyId = 'story_id'
 
-    const story = reconstitute.storyWithChildren([ taskId ], storyId)
+    const story = reconstitute.taskWithChildren([ taskId ], storyId)
     const task = reconstitute.taskWithParent(storyId, taskId)
     story.remove(task)
     const event = story.unpublishedEvents.find(e => e.name === ItemEvent.ChildrenRemoved)
@@ -19,7 +19,7 @@ describe('Task.remove', () => {
     const taskId = 'task_id'
     const storyId = 'story_id'
 
-    const story = reconstitute.storyWithChildren([ taskId ], storyId)
+    const story = reconstitute.taskWithChildren([ taskId ], storyId)
     const task = reconstitute.taskWithParent(storyId, taskId)
     story.remove(task)
     const event = task.unpublishedEvents.find(e => e.name === ItemEvent.ParentChanged)
@@ -27,7 +27,7 @@ describe('Task.remove', () => {
   })
 
   it('ignores tasks that are not children', () => {
-    const story = reconstitute.story('story_id')
+    const story = reconstitute.task('story_id')
     const task = reconstitute.task('task_id')
     story.remove(task)
     assert.lengthOf(story.unpublishedEvents, 0)

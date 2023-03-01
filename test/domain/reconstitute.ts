@@ -3,14 +3,9 @@ import { ItemEvent, ItemType } from '../../src/domain/enums.js'
 import { Task } from '../../src/domain/task.js'
 import * as source from '../../src/es/source.js'
 
-export const reconstituteStory = (id: string) =>
+export const reconstituteTaskWithChildren = (childIds: string[], id: string) =>
   Task.reconstitute(id, source.EntityVersion.new, [
-    new  source.PublishedEvent(ItemEvent.Created, { type: ItemType.Story }),
-  ])
-
-export const reconstituteStoryWithChildren = (childIds: string[], id: string) =>
-  Task.reconstitute(id, source.EntityVersion.new, [
-    new  source.PublishedEvent(ItemEvent.Created, { type: ItemType.Story }),
+    new  source.PublishedEvent(ItemEvent.Created, { type: ItemType.Task }),
     new  source.PublishedEvent(ItemEvent.ChildrenAdded, { children: childIds }),
   ])
 
@@ -29,8 +24,7 @@ export const reconstituteFeature = (id: string) =>
 
 export const reconstitute = {
   feature: reconstituteFeature,
-  story: reconstituteStory,
-  storyWithChildren: reconstituteStoryWithChildren,
+  taskWithChildren: reconstituteTaskWithChildren,
   task: reconstituteTask,
   taskWithParent: reconstituteTaskWithParent,
 }
