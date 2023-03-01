@@ -87,7 +87,7 @@ setup.post('/item/:id/child', async (request) => {
 
   const history = await repository.getHistoryFor(id)
 
-  if (!history || history.type !== 'Item') return ResponseObject.NotFound
+  if (!history || (history.type !== 'Item' && history.type !== Feature.TYPE_CODE && history.type !== Task.TYPE_CODE)) return ResponseObject.NotFound
 
   const typeDefiningEvents = history.events.filter(e => e.name === 'TypeChanged' || e.name === ItemEvent.Created)
   const lastTypeDefiningEvent = typeDefiningEvents[typeDefiningEvents.length - 1]

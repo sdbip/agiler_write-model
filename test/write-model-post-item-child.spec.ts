@@ -5,6 +5,8 @@ import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/response.js'
 import { MockEntityRepository, MockEventProjection, MockEventPublisher } from './mocks.js'
 import { post } from './http.js'
+import { Task } from '../src/domain/task.js'
+import { Feature } from '../src/domain/feature.js'
 
 describe('POST /item/:id/child', () => {
 
@@ -88,6 +90,26 @@ describe('POST /item/:id/child', () => {
 
   it('projects events', async () => {
     repository.nextHistory = new EntityHistory('Item', EntityVersion.of(0), [
+      new PublishedEvent(ItemEvent.Created, { type: ItemType.Feature }),
+    ])
+
+    await addChild('story_id', { title: 'Produce some value', type: ItemType.Feature })
+
+    assert.lengthOf(projection.lastSyncedEvents, 3)
+  })
+
+  it('projects Task events', async () => {
+    repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [
+      new PublishedEvent(ItemEvent.Created, { type: ItemType.Task }),
+    ])
+
+    await addChild('story_id', { title: 'Produce some value', type: ItemType.Feature })
+
+    assert.lengthOf(projection.lastSyncedEvents, 3)
+  })
+
+  it('projects events', async () => {
+    repository.nextHistory = new EntityHistory(Feature.TYPE_CODE, EntityVersion.of(0), [
       new PublishedEvent(ItemEvent.Created, { type: ItemType.Feature }),
     ])
 
