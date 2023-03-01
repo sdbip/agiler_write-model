@@ -4,7 +4,6 @@ export enum ItemEvent {
   ChildrenRemoved = 'ChildrenRemoved',
   ParentChanged = 'ParentChanged',
   ProgressChanged = 'ProgressChanged',
-  TypeChanged = 'TypeChanged',
 }
 
 export enum ItemType {

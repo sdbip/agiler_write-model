@@ -3,7 +3,8 @@ import { promises as fs } from 'fs'
 import { DATABASE_CONNECTION_STRING } from '../config.js'
 import { CanonicalEntityId } from './source.js'
 import { ItemEvent, Progress } from '../domain/enums.js'
-import { Item } from '../domain/item.js'
+import { Feature } from '../domain/feature.js'
+import { Task } from '../domain/task.js'
 
 export type Event = {
   entity: CanonicalEntityId,
@@ -20,7 +21,7 @@ export class EventProjection {
     await db.query(schema.toString('utf-8'))
 
     try {
-      for (const event of events.filter(e => e.entity.type === Item.TYPE_CODE)) {
+      for (const event of events.filter(e => [ Feature.TYPE_CODE, Task.TYPE_CODE ].indexOf(e.entity.type) >= 0)) {
         switch (event.name) {
           case ItemEvent.Created:
             await this.onCreated(event, db)
@@ -31,7 +32,7 @@ export class EventProjection {
           case ItemEvent.ProgressChanged:
             await this.onProgressChanged(event, db)
             break
-          case ItemEvent.TypeChanged:
+          case 'TypeChanged':
             await this.onTypeChanged(event, db)
             break
         }
@@ -48,6 +49,12 @@ export class EventProjection {
   }
 
   private async onParentChanged(event: Event, db: pg.Client) {
+    await db.query(
+      'UPDATE "items" SET type = \'Story\' WHERE id = $1 AND type = \'Task\'',
+      [ event.details.parent ])
+    await db.query(
+      'UPDATE "items" SET type = \'Epic\' WHERE id = $1 AND type = \'Feature\'',
+      [ event.details.parent ])
     await db.query(
       'UPDATE "items" SET parent_id = $2 WHERE id = $1',
       [ event.entity.id, event.details.parent ])

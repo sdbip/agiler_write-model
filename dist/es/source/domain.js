@@ -1,10 +1,10 @@
-import { failFast } from '../../fail-fast.js';
+import { guard } from '../../guard-clauses.js';
 export class CanonicalEntityId {
     constructor(id, type) {
         this.id = id;
         this.type = type;
-        failFast.unlessString(id, 'id');
-        failFast.unlessString(type, 'type');
+        guard.isString(id, 'id');
+        guard.isString(type, 'type');
     }
     equals(other) {
         return other.id === this.id && other.type === this.type;
@@ -18,12 +18,12 @@ export class EntityVersion {
         this.value = value;
     }
     static of(value) {
-        failFast.unlessNumber(value, 'version');
-        failFast.unless(value >= 0, 'version must not be negative');
+        guard.isNumber(value, 'version');
+        guard.that(value >= 0, 'version must not be negative');
         return new EntityVersion(value);
     }
     equals(other) {
-        failFast.unlessInstanceOf(EntityVersion)(other, 'other');
+        guard.isInstanceOf(EntityVersion)(other, 'other');
         return other.value === this.value;
     }
     next() {
@@ -38,8 +38,8 @@ export class UnpublishedEvent {
     constructor(name, details) {
         this.name = name;
         this.details = details;
-        failFast.unlessString(name, 'name');
-        failFast.unlessObject(details, 'details');
+        guard.isString(name, 'name');
+        guard.isObject(details, 'details');
     }
 }
 export class PublishedEvent {
@@ -60,7 +60,7 @@ export class Entity {
         this.id = id;
         this.version = version;
         this.unpublishedEvents = [];
-        failFast.unlessInstanceOf(CanonicalEntityId)(id, 'id');
-        failFast.unlessInstanceOf(EntityVersion)(version, 'version');
+        guard.isInstanceOf(CanonicalEntityId)(id, 'id');
+        guard.isInstanceOf(EntityVersion)(version, 'version');
     }
 }

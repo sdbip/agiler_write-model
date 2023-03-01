@@ -1,13 +1,13 @@
 import { assert } from 'chai'
 import { EntityHistory, EntityVersion } from '../src/es/source.js'
 import { ItemEvent, Progress } from '../src/domain/enums.js'
-import { Task } from '../src/domain/task.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/response.js'
 import * as mocks from './mocks.js'
 import { patch } from './http.js'
+import { Task } from '../src/domain/task.js'
 
-describe('PATCH /item/:id/complete', () => {
+describe('PATCH /task/:id/finish', () => {
 
   let repository: mocks.MockEntityRepository
   let publisher: mocks.MockEventPublisher
@@ -25,11 +25,11 @@ describe('PATCH /item/:id/complete', () => {
     authenticatedUser = 'some_user'
   })
 
-  const complete = (id: string) => patch(`/item/${id}/complete`, { ...authenticatedUser && { authorization: authenticatedUser } })
+  const finish = (id: string) => patch(`/task/${id}/finish`, { ...authenticatedUser && { authorization: authenticatedUser } })
 
-  it('publishes "ProgressChanged" event when items are completed', async () => {
+  it('publishes "ProgressChanged" event when tasks are finished', async () => {
     repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
-    const response = await complete('id')
+    const response = await finish('id')
 
     assert.equal(response.statusCode, StatusCode.NoContent)
     assert.deepEqual(repository.lastRequestedId, 'id')
@@ -50,7 +50,7 @@ describe('PATCH /item/:id/complete', () => {
   it('sets the actor to the authenticated user', async () => {
     repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
     authenticatedUser = 'the_user'
-    const response = await complete('id')
+    const response = await finish('id')
 
     assert.equal(response.statusCode, StatusCode.NoContent)
     assert.deepEqual(repository.lastRequestedId, 'id')
@@ -71,7 +71,7 @@ describe('PATCH /item/:id/complete', () => {
 
   it('projects "Completed" event', async () => {
     repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [])
-    await complete('id')
+    await finish('id')
 
     assert.lengthOf(projection.lastSyncedEvents, 1)
     assert.deepInclude(
@@ -85,20 +85,20 @@ describe('PATCH /item/:id/complete', () => {
 
   it('returns 401 if not authenticated', async () => {
     authenticatedUser = undefined
-    const response = await complete('id')
+    const response = await finish('id')
 
     assert.equal(response.statusCode, StatusCode.Unauthorized)
   })
 
   it('returns 404 if not found', async () => {
-    const response = await complete('id')
+    const response = await finish('id')
 
     assert.equal(response.statusCode, StatusCode.NotFound)
   })
 
-  it('returns 404 if not an Item', async () => {
+  it('returns 404 if not a Task', async () => {
     repository.nextHistory = new EntityHistory('Unexpected TYPE CODE', EntityVersion.of(0), [])
-    const response = await complete('id')
+    const response = await finish('id')
 
     assert.equal(response.statusCode, StatusCode.NotFound)
   })

@@ -1,6 +1,6 @@
 import { assert } from 'chai'
 import { EntityHistory, EntityVersion, PublishedEvent } from '../src/es/source.js'
-import { Item } from '../src/domain/item.js'
+import { Task } from '../src/domain/task.js'
 import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/response.js'
 import { MockEntityRepository } from './mocks.js'
@@ -22,7 +22,7 @@ describe('GET /item/:id', () => {
 
   it('returns the complete history of the item', async () => {
     repository.nextHistory = new EntityHistory(
-      Item.TYPE_CODE,
+      Task.TYPE_CODE,
       EntityVersion.of(2),
       [ new PublishedEvent('event', { value: 12 }) ],
     )
@@ -30,7 +30,7 @@ describe('GET /item/:id', () => {
 
     assert.equal(response.statusCode, StatusCode.OK)
     assert.deepEqual(JSON.parse(response.content), {
-      type: Item.TYPE_CODE,
+      type: Task.TYPE_CODE,
       version: EntityVersion.of(2),
       events: [
         {

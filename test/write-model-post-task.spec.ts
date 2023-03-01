@@ -5,9 +5,9 @@ import { injectServices, startServer, stopServer } from '../src/index.js'
 import { StatusCode } from '../src/response.js'
 import { MockEventProjection, MockEventPublisher } from './mocks.js'
 import { post } from './http.js'
-import { Feature } from '../src/domain/feature.js'
+import { Task } from '../src/domain/task.js'
 
-describe('POST /item', () => {
+describe('POST /task', () => {
 
   let publisher: MockEventPublisher
   let projection: MockEventProjection
@@ -28,22 +28,21 @@ describe('POST /item', () => {
     type?: ItemType
   }
 
-  const addItem = (body: Body) => post('/item', { ... authenticatedUser && { authorization: authenticatedUser }, body })
+  const addTask = (body: Body) => post('/task', { ... authenticatedUser && { authorization: authenticatedUser }, body })
 
   it('publishes "Created" event', async () => {
-    const response = await addItem({
+    const response = await addTask({
       title: 'Produce some value',
-      type: ItemType.Feature,
     })
 
     assert.equal(response.statusCode, StatusCode.Created)
-    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Feature.TYPE_CODE)
+    assert.equal(publisher.lastPublishedEntities[0]?.id.type, Task.TYPE_CODE)
     assert.equal(publisher.lastPublishedEntities[0]?.version, EntityVersion.new)
     assert.lengthOf(publisher.lastPublishedEvents, 1)
     assert.deepInclude(publisher.lastPublishedEvents[0], {
       event: {
         name: ItemEvent.Created,
-        details: { title: 'Produce some value', type: ItemType.Feature },
+        details: { title: 'Produce some value', type: ItemType.Task },
       },
     })
   })
@@ -51,9 +50,8 @@ describe('POST /item', () => {
   it('assigns the authenticated username to the event', async () => {
     authenticatedUser = 'the_user'
 
-    await addItem({
+    await addTask({
       title: 'Produce some value',
-      type: ItemType.Feature,
     })
 
     assert.deepInclude(publisher.lastPublishedEvents[0], {
@@ -62,21 +60,21 @@ describe('POST /item', () => {
   })
 
   it('projects "Created" event', async () => {
-    await addItem({ title: 'Produce some value', type: ItemType.Feature })
+    await addTask({ title: 'Produce some value' })
 
     assert.lengthOf(projection.lastSyncedEvents, 1)
     assert.deepInclude(
       projection.lastSyncedEvents[0],
       {
         name: ItemEvent.Created,
-        details: { title: 'Produce some value', type: ItemType.Feature },
+        details: { title: 'Produce some value', type: ItemType.Task },
       })
-    assert.equal(projection.lastSyncedEvents[0]?.entity.type, Feature.TYPE_CODE)
+    assert.equal(projection.lastSyncedEvents[0]?.entity.type, Task.TYPE_CODE)
   })
 
   it('returns 401 if not authenticated', async () => {
     authenticatedUser = undefined
-    const response = await addItem({ title: 'Produce some value', type: ItemType.Feature })
+    const response = await addTask({ title: 'Produce some value', type: ItemType.Task })
 
     assert.equal(response.statusCode, StatusCode.Unauthorized)
   })

@@ -5,7 +5,6 @@ export var ItemEvent;
     ItemEvent["ChildrenRemoved"] = "ChildrenRemoved";
     ItemEvent["ParentChanged"] = "ParentChanged";
     ItemEvent["ProgressChanged"] = "ProgressChanged";
-    ItemEvent["TypeChanged"] = "TypeChanged";
 })(ItemEvent || (ItemEvent = {}));
 export var ItemType;
 (function (ItemType) {

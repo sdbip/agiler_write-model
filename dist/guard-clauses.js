@@ -34,13 +34,17 @@ const requireArrayOfEnum = (type, { argument, name }) => {
     requireCondition(argument instanceof Array, `argument ${name} must be an array`);
     requireCondition(argument.every((e) => type[e] !== undefined), `argument ${name} must only contain elements of type ${type}`);
 };
-export const failFast = {
-    unless: requireCondition,
-    unlessExists: requireValueSet,
-    unlessNumber: requireNumber,
-    unlessString: requireString,
-    unlessObject: requireObject,
-    unlessInstanceOf: (type) => (argument, name) => requireInstanceOf(type, { argument, name }),
-    unlessArrayOf: (type) => (argument, name) => requireArrayOf(type, { argument, name }),
-    unlessArrayOfEnum: (type) => (argument, name) => requireArrayOfEnum(type, { argument, name }),
+const requireOneOf = (values, value) => {
+    requireCondition(values.includes(value), `invalid value: ${value}`);
+};
+export const guard = {
+    that: requireCondition,
+    exists: requireValueSet,
+    isNumber: requireNumber,
+    isString: requireString,
+    isObject: requireObject,
+    isIn: (values) => (value) => requireOneOf(values, value),
+    isInstanceOf: (type) => (argument, name) => requireInstanceOf(type, { argument, name }),
+    isArrayOf: (type) => (argument, name) => requireArrayOf(type, { argument, name }),
+    isArrayOfEnum: (type) => (argument, name) => requireArrayOfEnum(type, { argument, name }),
 };

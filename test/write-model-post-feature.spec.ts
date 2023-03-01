@@ -7,7 +7,7 @@ import { MockEventProjection, MockEventPublisher } from './mocks.js'
 import { post } from './http.js'
 import { Feature } from '../src/domain/feature.js'
 
-describe('POST /item', () => {
+describe('POST /feature', () => {
 
   let publisher: MockEventPublisher
   let projection: MockEventProjection
@@ -28,12 +28,11 @@ describe('POST /item', () => {
     type?: ItemType
   }
 
-  const addItem = (body: Body) => post('/item', { ... authenticatedUser && { authorization: authenticatedUser }, body })
+  const addFeature = (body: Body) => post('/feature', { ... authenticatedUser && { authorization: authenticatedUser }, body })
 
   it('publishes "Created" event', async () => {
-    const response = await addItem({
+    const response = await addFeature({
       title: 'Produce some value',
-      type: ItemType.Feature,
     })
 
     assert.equal(response.statusCode, StatusCode.Created)
@@ -51,9 +50,8 @@ describe('POST /item', () => {
   it('assigns the authenticated username to the event', async () => {
     authenticatedUser = 'the_user'
 
-    await addItem({
+    await addFeature({
       title: 'Produce some value',
-      type: ItemType.Feature,
     })
 
     assert.deepInclude(publisher.lastPublishedEvents[0], {
@@ -62,7 +60,7 @@ describe('POST /item', () => {
   })
 
   it('projects "Created" event', async () => {
-    await addItem({ title: 'Produce some value', type: ItemType.Feature })
+    await addFeature({ title: 'Produce some value', type: ItemType.Feature })
 
     assert.lengthOf(projection.lastSyncedEvents, 1)
     assert.deepInclude(
@@ -76,7 +74,7 @@ describe('POST /item', () => {
 
   it('returns 401 if not authenticated', async () => {
     authenticatedUser = undefined
-    const response = await addItem({ title: 'Produce some value', type: ItemType.Feature })
+    const response = await addFeature({ title: 'Produce some value', type: ItemType.Feature })
 
     assert.equal(response.statusCode, StatusCode.Unauthorized)
   })

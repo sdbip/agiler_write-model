@@ -1,5 +1,5 @@
 import { IncomingMessage, request } from 'http'
-import { PORT } from '../src/config'
+import { PORT } from '../src/config.js'
 
 export function get(path: string) {
   return send({ method: 'GET', path })
