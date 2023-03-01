@@ -34,7 +34,7 @@ describe('POST /task/:id/child', () => {
 
   it('publishes "ChildrenAdded" and "ParentChanged" events', async () => {
     repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [
-      new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Story }),
+      new PublishedEvent(ItemEvent.Created, { type: ItemType.Story }),
     ])
 
     const response = await addChild('parent_id', { title: 'Produce some value', type: ItemType.Task })
@@ -68,7 +68,7 @@ describe('POST /task/:id/child', () => {
   it('assigns the authenticated user to the events', async () => {
     authenticatedUser = 'the_user'
     repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [
-      new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Story }),
+      new PublishedEvent(ItemEvent.Created, { type: ItemType.Story }),
     ])
 
     const response = await addChild('parent_id', { title: 'Produce some value', type: ItemType.Task })
@@ -92,7 +92,7 @@ describe('POST /task/:id/child', () => {
 
   it('projects events', async () => {
     repository.nextHistory = new EntityHistory(Task.TYPE_CODE, EntityVersion.of(0), [
-      new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Story }),
+      new PublishedEvent(ItemEvent.Created, { type: ItemType.Story }),
     ])
 
     await addChild('parent_id', { title: 'Produce some value', type: ItemType.Task })

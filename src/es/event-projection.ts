@@ -32,7 +32,7 @@ export class EventProjection {
           case ItemEvent.ProgressChanged:
             await this.onProgressChanged(event, db)
             break
-          case ItemEvent.TypeChanged:
+          case 'TypeChanged':
             await this.onTypeChanged(event, db)
             break
         }

@@ -5,7 +5,6 @@ import { ItemEvent, ItemType, Progress } from './enums.js'
 
 type AddEvent =
   ((this: Task, event: ItemEvent.Created, details: { title: string, type: ItemType }) => void)
-& ((this: Task, event: ItemEvent.TypeChanged, details: {type: ItemType}) => void)
 & ((this: Task, event: ItemEvent.ChildrenAdded, details: { children: [ string ] }) => void)
 & ((this: Task, event: ItemEvent.ChildrenRemoved, details: { children: [ string ] }) => void)
 & ((this: Task, event: ItemEvent.ParentChanged, details: { parent: string|null }) => void)
@@ -17,18 +16,9 @@ export class Task extends source.Entity {
   private itemType = ItemType.Task
   private parent?: string
 
-  promote() {
-    guard.that(this.itemType === ItemType.Task, 'Only tasks may be promoted')
-
-    this.itemType = ItemType.Story
-    this.addNewEvent(ItemEvent.TypeChanged, { type: ItemType.Story })
-  }
-
   add(child: Task) {
-    guard.that(this.itemType !== ItemType.Task, 'tasks may not have children')
+    // if (child.parent == this.id.id) return
     guard.that(child.parent === undefined, 'Item must not have other parent')
-    if (this.itemType === ItemType.Story)
-      guard.that(child.itemType === ItemType.Task, 'Only tasks may be added')
 
     this.addNewEvent(ItemEvent.ChildrenAdded, { children: [ child.id.id ] })
     child.removeEventMatching(e => e.name === ItemEvent.ParentChanged)
@@ -43,7 +33,7 @@ export class Task extends source.Entity {
   }
 
   finish() {
-    guard.that(this.itemType === ItemType.Task, 'Only tasks may be completed')
+    // guard.isEmpty(this.children)
 
     this.addNewEvent(ItemEvent.ProgressChanged, { progress: Progress.Completed })
   }
@@ -59,7 +49,7 @@ export class Task extends source.Entity {
     for (const event of events) {
       switch (event.name) {
         case ItemEvent.Created:
-        case ItemEvent.TypeChanged:
+        case 'TypeChanged':
           guard.isIn([ ItemType.Story, ItemType.Task ])(event.details.type)
           item.itemType = event.details.type
           break

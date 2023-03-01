@@ -89,7 +89,7 @@ setup.post('/item/:id/child', async (request) => {
 
   if (!history || history.type !== 'Item') return ResponseObject.NotFound
 
-  const typeDefiningEvents = history.events.filter(e => e.name === ItemEvent.TypeChanged || e.name === ItemEvent.Created)
+  const typeDefiningEvents = history.events.filter(e => e.name === 'TypeChanged' || e.name === ItemEvent.Created)
   const lastTypeDefiningEvent = typeDefiningEvents[typeDefiningEvents.length - 1]
 
   switch (lastTypeDefiningEvent.details.type) {
@@ -197,31 +197,7 @@ setup.patch('/task/:id/finish', async (request) => {
   return ResponseObject.NoContent
 })
 
-setup.patch('/item/:id/promote', async (request) => {
-  const actor = getAuthenticatedUser(request)
-  if (!actor) return ResponseObject.Unauthorized
-
-  const id = request.params.id as string
-  const history = await repository.getHistoryFor(id)
-  if (!history || history.type !== Task.TYPE_CODE) return ResponseObject.NotFound
-
-  const item = Task.reconstitute(id, history.version, history.events)
-  item.promote()
-  await publishChanges([ item ], actor)
-  return ResponseObject.NoContent
-})
-
-setup.patch('/task/:id/promote', async (request) => {
-  const actor = getAuthenticatedUser(request)
-  if (!actor) return ResponseObject.Unauthorized
-
-  const id = request.params.id as string
-  const history = await repository.getHistoryFor(id)
-  if (!history || history.type !== Task.TYPE_CODE) return ResponseObject.NotFound
-
-  const task = Task.reconstitute(id, history.version, history.events)
-  task.promote()
-  await publishChanges([ task ], actor)
+setup.patch('/item/:id/promote', async () => {
   return ResponseObject.NoContent
 })
 

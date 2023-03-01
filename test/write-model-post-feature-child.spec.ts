@@ -34,7 +34,7 @@ describe('POST /feature/:id/child', () => {
 
   it('publishes "ChildrenAdded" and "ParentChanged" events', async () => {
     repository.nextHistory = new EntityHistory(Feature.TYPE_CODE, EntityVersion.of(0), [
-      new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
+      new PublishedEvent(ItemEvent.Created, { type: ItemType.Feature }),
     ])
 
     const response = await addChild('parent_id', { title: 'Produce some value', type: ItemType.Feature })
@@ -45,7 +45,6 @@ describe('POST /feature/:id/child', () => {
     const createdEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.Created)
     const childrenAddedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ChildrenAdded)
     const parentChangedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ParentChanged)
-    const typeChangedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.TypeChanged)
     assert.deepInclude(childrenAddedEvent, {
       event: {
         name: ItemEvent.ChildrenAdded,
@@ -64,18 +63,12 @@ describe('POST /feature/:id/child', () => {
         details: { title: 'Produce some value', type: ItemType.Feature },
       },
     })
-    assert.deepInclude(typeChangedEvent, {
-      event: {
-        name: ItemEvent.TypeChanged,
-        details: { type: ItemType.Epic },
-      },
-    })
   })
 
   it('assigns the authenticated user to the events', async () => {
     authenticatedUser = 'the_user'
     repository.nextHistory = new EntityHistory(Feature.TYPE_CODE, EntityVersion.of(0), [
-      new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
+      new PublishedEvent(ItemEvent.Created, { type: ItemType.Feature }),
     ])
 
     await addChild('parent_id', { title: 'Produce some value', type: ItemType.Feature })
@@ -83,7 +76,6 @@ describe('POST /feature/:id/child', () => {
     const createdEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.Created)
     const childrenAddedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ChildrenAdded)
     const parentChangedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.ParentChanged)
-    const typeChangedEvent = publisher.lastPublishedEvents.find(e => e.event.name === ItemEvent.TypeChanged)
     assert.deepInclude(childrenAddedEvent, {
       actor: 'the_user',
     })
@@ -93,19 +85,16 @@ describe('POST /feature/:id/child', () => {
     assert.deepInclude(createdEvent, {
       actor: 'the_user',
     })
-    assert.deepInclude(typeChangedEvent, {
-      actor: 'the_user',
-    })
   })
 
   it('projects events', async () => {
     repository.nextHistory = new EntityHistory(Feature.TYPE_CODE, EntityVersion.of(0), [
-      new PublishedEvent(ItemEvent.TypeChanged, { type: ItemType.Feature }),
+      new PublishedEvent(ItemEvent.Created, { type: ItemType.Feature }),
     ])
 
     await addChild('parent_id', { title: 'Produce some value', type: ItemType.Feature })
 
-    assert.lengthOf(projection.lastSyncedEvents, 4)
+    assert.lengthOf(projection.lastSyncedEvents, 3)
   })
 
   it('returns 401 if not authenticated', async () => {

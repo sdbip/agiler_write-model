@@ -5,7 +5,6 @@ import { ItemEvent, ItemType, Progress } from './enums.js'
 
 type AddEvent =
   ((this: Feature, event: ItemEvent.Created, details: { title: string, type: ItemType }) => void)
-& ((this: Feature, event: ItemEvent.TypeChanged, details: {type: ItemType}) => void)
 & ((this: Feature, event: ItemEvent.ChildrenAdded, details: { children: [ string ] }) => void)
 & ((this: Feature, event: ItemEvent.ChildrenRemoved, details: { children: [ string ] }) => void)
 & ((this: Feature, event: ItemEvent.ParentChanged, details: { parent: string|null }) => void)
@@ -22,9 +21,6 @@ export class Feature extends source.Entity {
     guard.that(child.parent === undefined, 'Feature must not have other parent')
 
     this.addNewEvent(ItemEvent.ChildrenAdded, { children: [ child.id.id ] })
-    if (this.itemType === ItemType.Feature)
-      this.addNewEvent(ItemEvent.TypeChanged, { type: ItemType.Epic })
-
     child.removeEventMatching(e => e.name === ItemEvent.ParentChanged)
     child.addNewEvent(ItemEvent.ParentChanged, { parent: this.id.id })
   }
@@ -47,7 +43,7 @@ export class Feature extends source.Entity {
     for (const event of events) {
       switch (event.name) {
         case ItemEvent.Created:
-        case ItemEvent.TypeChanged:
+        case 'TypeChanged':
           guard.isIn([ ItemType.Epic, ItemType.Feature ])(event.details.type)
           feature.itemType = event.details.type
           break

@@ -71,20 +71,4 @@ describe('Task.add', () => {
     assert.lengthOf(story.unpublishedEvents, 0)
     assert.lengthOf(task.unpublishedEvents, 0)
   })
-
-  it('throws if parent is not a Story', () => {
-    const task1 = reconstitute.task('task1_id')
-    const task2 = reconstitute.task('task2_id')
-    assert.throws(() => task1.add(task2))
-    assert.lengthOf(task1.unpublishedEvents, 0)
-    assert.lengthOf(task2.unpublishedEvents, 0)
-  })
-
-  it('throws if added item is not a Task', () => {
-    const task = reconstitute.task('task_id')
-    const story = reconstitute.story('story_id')
-    assert.throws(() => task.add(story))
-    assert.lengthOf(task.unpublishedEvents, 0)
-    assert.lengthOf(story.unpublishedEvents, 0)
-  })
 })

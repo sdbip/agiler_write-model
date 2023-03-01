@@ -11,9 +11,5 @@ describe('Item.complete', () => {
     assert.equal(event?.details.progress, Progress.Completed)
   })
 
-  it('throws if not a task', () => {
-    const story = reconstitute.story('id')
-    assert.throws(() => story.finish())
-    assert.lengthOf(story.unpublishedEvents, 0)
-  })
+  it('throws if it has children')
 })
