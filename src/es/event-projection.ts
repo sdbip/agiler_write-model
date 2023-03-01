@@ -50,6 +50,12 @@ export class EventProjection {
 
   private async onParentChanged(event: Event, db: pg.Client) {
     await db.query(
+      'UPDATE "items" SET type = \'Story\' WHERE id = $1 AND type = \'Task\'',
+      [ event.details.parent ])
+    await db.query(
+      'UPDATE "items" SET type = \'Epic\' WHERE id = $1 AND type = \'Feature\'',
+      [ event.details.parent ])
+    await db.query(
       'UPDATE "items" SET parent_id = $2 WHERE id = $1',
       [ event.entity.id, event.details.parent ])
   }

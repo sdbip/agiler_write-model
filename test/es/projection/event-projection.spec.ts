@@ -121,6 +121,34 @@ describe(EventProjection.name, () => {
       const result = await db.query('SELECT * FROM "items"')
       assert.deepEqual(result.rows[0], originalItem)
     })
+
+    it('converts parent to a Story', async () => {
+      await db.query("INSERT INTO Items (id, type, progress, title) VALUES ('parent-id', 'Task', 'notStarted', 'Get it done')")
+      await projection.sync([
+        {
+          name: ItemEvent.ParentChanged,
+          entity: new CanonicalEntityId('id', 'Task'),
+          details: { parent: 'parent-id' },
+        },
+      ])
+
+      const result = await db.query('SELECT * FROM "items" WHERE id = $1', [ 'parent-id' ])
+      assert.deepInclude(result.rows[0], { type: ItemType.Story })
+    })
+
+    it('converts parent to an Epic', async () => {
+      await db.query("INSERT INTO Items (id, type, progress, title) VALUES ('parent-id', 'Feature', 'notStarted', 'Get it done')")
+      await projection.sync([
+        {
+          name: ItemEvent.ParentChanged,
+          entity: new CanonicalEntityId('id', 'Feature'),
+          details: { parent: 'parent-id' },
+        },
+      ])
+
+      const result = await db.query('SELECT * FROM "items" WHERE id = $1', [ 'parent-id' ])
+      assert.deepInclude(result.rows[0], { type: ItemType.Epic })
+    })
   })
 
   describe(`on "${ItemEvent.ProgressChanged}"`, () => {
